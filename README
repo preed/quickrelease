@@ -1,0 +1,76 @@
+
+QuickRelease
+=============
+
+QuickRelease is a lightweight release harness[0] that aims to provide a
+framework and supporting utilities infrastructure to help define a process.
+
+This can be a release process, a QA process... just about any kind of process.
+
+Its design goals are to be:
+
+* Lightweight: you shouldn't have to install _anything_ other than Python to
+  be able to use it.
+
+* Out-of-the-way: it provides a structure to write Python to get your work done
+  but impose the least number of limitations on what that code can do or how
+  it needs to work
+
+This is why it's especially useful to use it when developing processes that
+may be driven by your continuous integration system; use quick-release to
+develop the process and steps anywhere, with low setup-costs for engineers,
+and have your CI system call quick-release when you're ready.
+
+Installation
+------------
+
+Installation is currently manual, but relatively simple:
+
+The python executable is quick-release, and the quickrelease diretory must
+be added to the PYTHONHOME. It is currently expected that quick-release
+will leave next to this directory.
+
+To get up and running, there is a TestProcess and TestSteps in the examples
+directory; copy TestProcess.py into the quickrelease/processes directory and
+copy TestSteps.py into the quickrelease/steps directory.
+
+You can then run the following to see if it worked:
+
+./quickrelease -l
+./quickrelease -l -p TestProcess
+
+If you'd like to try it out, run:
+
+./quickrelease -c examples/sample.cfg -p TestProcess
+
+Then, start modifying TestProcess.py and TestStep.py to fit your needs. 
+
+QuickRelease is smart enough to find any new processes and steps that you 
+put into these directories, and offer them to you, as long as they're 
+derived from the Process and Step classes.
+
+TODOs
+-----
+
+The following are considered deficiencies in quick-release and are at the
+top of the list to fix.
+
+* Both the RunShellCommand function and its associated RunShellCommandError
+  class need a refactor. They mostly work, however they do have some
+  unimplemented edges, inconsistencies, and some of the output buffering
+  from commands can be inconsistent.
+
+* Better logging handling; currently, implementors of steps are mostly 
+  responsible for their own logging, usually through printing to sys.stderr 
+  and hoping the person running the script is capturing the output with
+  shell redirects or /usr/bin/tee. This should provided for the user by
+  quick-release.
+
+* The concept of a "deliverable" is currently not a first-class object,
+  leaving implementors to hack it up.
+
+* Ditto the concept of "partners" (or, really, any set of process steps 
+  that needs to be repeated during a single run of the process, with 
+  slight changes in configuration.)
+
+[0] "Quick release harness"... get it?
