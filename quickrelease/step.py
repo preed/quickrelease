@@ -69,10 +69,12 @@ class Step(object):
       pass
 
    def Execute(self):
-      raise NotImplementedError("Step::Execute()")
+      raise NotImplementedError("Need implementation for %s::Execute()" % 
+       (str(self)))
 
    def Verify(self):
-      raise NotImplementedError("Step::Verify()")
+      raise NotImplementedError("Need implementation for %s::Verify()" % 
+       (str(self)))
   
    def Notify(self):
       pass
