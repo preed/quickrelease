@@ -31,8 +31,9 @@ def GetAllPartnerList(configSpec):
    return partners
 
 def GetSHA1FileHash(path):
-   assert os.path.isfile(path), ("GetSHA1FileHash(): path is not a file: %s" %
-    (path))
+   if not os.path.isfile(path):
+      raise ValueError("GetSHA1FileHash(): invalid path: %s" % (path))
+
    sha1 = hashlib.sha1()
    f = open(path, 'rb')
    sha1.update(f.read())
