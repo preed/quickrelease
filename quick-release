@@ -60,10 +60,10 @@ def main(argv):
                 help="Root directory to use; default: cwd")
    o.add_option('-s', '--start-at', dest='startAt', default=None,
                 help="Step Name to start at")
-   o.add_option('-v', '--verify-only', dest='verifyOnly', default=False,
+   o.add_option('-V', '--verify-only', dest='verifyOnly', default=False,
                 action='store_true',
                 help="Only run the Verify portion of the specified steps.")
-   o.add_option('-x', '--execute-only', dest='executeOnly', default=False,
+   o.add_option('-X', '--execute-only', dest='executeOnly', default=False,
                 action='store_true',
                 help="Only run the Execute portion of the specified steps.")
 
