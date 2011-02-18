@@ -2,11 +2,27 @@
 import hashlib
 import os
 import re
+from subprocess import PIPE
+import sys
 from threading import Thread
+import time
 import types
 from urllib import FancyURLopener
 
-from quickrelease.config import ConfigSpec
+from quickrelase.config import ConfigSpec, ConfigSpecError
+
+gUsingKillableProcess = True
+
+try:
+   if bool(ConfigSpec.GetConstant('DISABLE_KILLABLEPROCESS_PY')):
+      gUsingKillableProcess = False
+except ConfigSpecError:
+   pass
+
+if gUsingKillableProcess:
+   from killableprocess import Popen
+else:
+   from subprocess import Popen
 
 def GetDeliverableRootPath(configSpec):
    return os.path.join(configSpec.Get('root_dir'),
