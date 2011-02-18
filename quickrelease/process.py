@@ -110,7 +110,7 @@ class Process(object):
 
       partnerList = [ None ]
       if stepObj.IsPartnerStep():
-         partnerList = GetPartnerList(self.GetConfig())
+         partnerList = GetActivePartnerList(self.GetConfig())
 
       try:
          if self.executeSteps:
