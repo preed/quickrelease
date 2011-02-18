@@ -56,6 +56,15 @@ def GetSHA1FileHash(path):
    f.close()
    return sha1.hexdigest()
 
+def Makedirs(path):
+   try:
+      os.makedirs(path)
+   except OSError, ex:
+      # Ignore EEXIST 
+      if ex.errno != 17:
+         raise ex
+      pass
+
 class ExceptionURLopener(FancyURLopener):
    def __init__(self, *args, **kwargs):
       FancyURLopener.__init__(self, *args, **kwargs)
