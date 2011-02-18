@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
 # Copyright (c) 2010-2011 Pioneers of the Inevitable/Songbird
+# Copyright (c) 2011      J. Paul Reed
 #
 # Permission is hereby granted, free of charge, to any person obtaining a 
 # copy of this software and associated documentation files (the "Software"),
@@ -29,7 +30,7 @@ from quickrelease.process import Process
 from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
 
-QUICK_RELEASE_VERSION = '0.6'
+QUICK_RELEASE_VERSION = '0.7'
 
 gRootDir = None
 
