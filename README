@@ -3,23 +3,23 @@ QuickRelease
 =============
 
 QuickRelease is a lightweight release harness[0] that aims to provide a
-framework and supporting utilities infrastructure to help define a process.
+framework and supporting infrastructure to help define a process.
 
 This can be a release process, a QA process... just about any kind of process.
 
 Its design goals are to be:
 
 * Lightweight: you shouldn't have to install _anything_ other than Python to
-  be able to use it.
+  use it.
 
 * Out-of-the-way: it provides a structure to write Python to get your work done
-  but impose the least number of limitations on what that code can do or how
-  it needs to work
+  but imposes the least number of limitations on what that code can do or how
+  it works.
 
-This is why it's especially useful to use it when developing processes that
-may be driven by your continuous integration system; use quick-release to
-develop the process and steps anywhere, with low setup-costs for engineers,
-and have your CI system call quick-release when you're ready.
+It's especially useful for developing processes that may be driven by your
+continuous integration system; use quick-release to develop the process and 
+steps anywhere, with low setup-costs for engineers, and have your CI system 
+call quick-release when you're ready.
 
 Installation
 ------------
@@ -28,7 +28,7 @@ Installation is currently manual, but relatively simple:
 
 The python executable is quick-release, and the quickrelease diretory must
 be added to the PYTHONHOME. It is currently expected that quick-release
-will leave next to this directory.
+will live next to this directory.
 
 To get up and running, there is a TestProcess and TestSteps in the examples
 directory; copy TestProcess.py into the quickrelease/processes directory and
@@ -56,7 +56,7 @@ The following are considered deficiencies in quick-release and are at the
 top of the list to fix.
 
 * Both the RunShellCommand function and its associated RunShellCommandError
-  class need a refactor. They mostly work, however they do have some
+  class need to be refactored. They mostly work, however they do have some
   unimplemented edges, inconsistencies, and some of the output buffering
   from commands can be inconsistent.
 
@@ -65,9 +65,6 @@ top of the list to fix.
   and hoping the person running the script is capturing the output with
   shell redirects or /usr/bin/tee. This should provided for the user by
   quick-release.
-
-* The concept of a "deliverable" is currently not a first-class object,
-  leaving implementors to hack it up.
 
 * Ditto the concept of "partners" (or, really, any set of process steps 
   that needs to be repeated during a single run of the process, with 
