@@ -9,7 +9,7 @@ import time
 import types
 from urllib import FancyURLopener
 
-from quickrelase.config import ConfigSpec, ConfigSpecError
+from quickrelease.config import ConfigSpec, ConfigSpecError
 
 gUsingKillableProcess = True
 
@@ -20,7 +20,7 @@ except ConfigSpecError:
    pass
 
 if gUsingKillableProcess:
-   from killableprocess import Popen
+   from quickrelease.killableprocess import Popen
 else:
    from subprocess import Popen
 
