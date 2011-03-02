@@ -30,7 +30,7 @@ from quickrelease.process import Process
 from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
 
-QUICK_RELEASE_VERSION = '0.7'
+QUICK_RELEASE_VERSION = '0.8.0pre'
 
 gRootDir = None
 
