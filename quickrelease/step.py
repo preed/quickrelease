@@ -6,9 +6,7 @@ class StepError(ReleaseFrameworkError):
    def __init__(self, stepObj, errStr, *args, **kwargs):
       ReleaseFrameworkError.__init__(self, errStr)
 
-      assert isinstance(stepObj, Step), ('StepErrors require a Step '
-       'object')
-
+      assert isinstance(stepObj, Step), 'StepErrors require a Step object'
       self.erroredStep = stepObj
 
    def __str__(self):
