@@ -191,7 +191,7 @@ def RunShellCommand(command=(),
    if verbose or os.getenv('SB_VERBOSE') != None:
       if dir != None:
          print >> sys.stderr, ('Running command: %s in directory %s with '
-          ' timeout %ss' % (commandStr, dir, timeout))
+          'timeout %ss' % (commandStr, dir, timeout))
       else:
          print >> sys.stderr, ('Running command: %s with timeout %ss' % 
           (commandStr, timeout))
