@@ -40,6 +40,7 @@ class Process(object):
       self.executeSteps = True
       self.verifySteps = True
       self.ignoreErrors = False
+      self.enableNotifications = False
 
       for arg in Process.RECOGNIZED_CONSTRUCTOR_ARGS:
          if kwargs.has_key(arg):
@@ -127,6 +128,12 @@ class Process(object):
                os.chdir(rootDir)
                stepObj.SetActivePartner(p)
                stepObj.Verify()
+
+         if self.enableNotifications:
+            for p in partnerList:
+               os.chdir(rootDir)
+               stepObj.SetActivePartner(p)
+               stepObj.Notify()
 
       except ReleaseFrameworkError, ex:
          if self.ignoreErrors:
