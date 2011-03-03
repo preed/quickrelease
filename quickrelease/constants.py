@@ -1,5 +1,6 @@
 
 QUICKRELEASE_CONSTANTS = {
+   'MAKE' : 'make',
    'MV' : 'mv',
    'PERL' : 'perl',
    'S3CURL' : 's3curl.pl',
