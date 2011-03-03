@@ -181,6 +181,13 @@ def RunShellCommand(command=(),
 
    commandStr = ' '.join(execArray)
 
+   try:
+      if timeout is not None:
+         timeout = float(timeout)
+   except ValueError:
+      raise ValueError("Invalid timeout value passed to RunShellCommand: '%s'"
+       % timeout)
+
    if verbose or os.getenv('SB_VERBOSE') != None:
       if dir != None:
          print >> sys.stderr, ('Running command: %s in directory %s with '
