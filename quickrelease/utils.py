@@ -1,4 +1,5 @@
 
+import errno
 import hashlib
 import os
 import re
@@ -60,8 +61,7 @@ def Makedirs(path):
    try:
       os.makedirs(path)
    except OSError, ex:
-      # Ignore EEXIST 
-      if ex.errno != 17:
+      if ex.errno != errno.EEXIST:
          raise ex
       pass
 
