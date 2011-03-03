@@ -35,7 +35,7 @@ def GetActivePartnerList(configSpec):
       assert configSpec.ValidPartner(p), ("Invalid partner '%s' specified in " 
        "active_partners" % (p))
 
-   return tuple(partners)
+   return partners
 
 def GetAllPartnerList(configSpec):
    partners = []
@@ -45,7 +45,7 @@ def GetAllPartnerList(configSpec):
       if partnerMatch:
           partners.append(partnerMatch.group(1))
 
-   return tuple(partners)
+   return partners
 
 def GetSHA1FileHash(path):
    if not os.path.isfile(path):
