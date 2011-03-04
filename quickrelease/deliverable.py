@@ -178,7 +178,7 @@ class Deliverable(object):
 
       if (Deliverable.gDeliverablesCache is not None and
        (useCache and not flushCache)):
-         return Deliverable.gDeliverablesCache
+         return None
 
       deliverables = []
       deliverableSections = Deliverable.GetDeliverableSections(config)
@@ -252,7 +252,7 @@ class Deliverable(object):
       if flushCache: 
          Deliverable.gDeliverablesCache = tuple(deliverables)
 
-      return tuple(deliverables)
+      return len(tuple(deliverables))
 
    @staticmethod
    def GetAllDeliverables(useCache=True, config=None, deliverableDir=None):
