@@ -42,13 +42,17 @@ class Deliverable(object):
       self.attributeHandlers = {}
 
       try:
-         self.name = config.SectionGet(self.configSection, 'name')
-      except ConfigSpecError:
+         self.name = config.SectionGet(self.configSection, 'name').strip()
+      except ConfigSpecError, ex:
+         if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+            raise ex
          pass
 
       try:
-         self.regex = config.SectionGet(self.configSection, 'regex')
-      except ConfigSpecError:
+         self.regex = config.SectionGet(self.configSection, 'regex').strip()
+      except ConfigSpecError, ex:
+         if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+            raise ex
          pass
 
       if self.regex is None and self.name is None:
@@ -58,7 +62,9 @@ class Deliverable(object):
       try:
          self.attributes = config.SectionGet(self.configSection, 'attributes',
           list)
-      except ConfigSpecError:
+      except ConfigSpecError, ex:
+         if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+            raise ex
          pass
 
       for attr in self.attributes:
@@ -68,11 +74,16 @@ class Deliverable(object):
          try:
             attributeHandler = config.SectionGet(self.configSection,
              'attrib_%s_handler' % (attr))
-         except ConfigSpecError:
+         except ConfigSpecError, ex:
+            if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+               raise ex
+
             try:
                attributeRegex = config.SectionGet(self.configSection,
                 'attrib_%s_regex' % (attr))
             except ConfigSpecError:
+               if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+                  raise ex
                pass
 
          if attributeRegex is None and attributeHandler is None:
@@ -101,7 +112,9 @@ class Deliverable(object):
       try:
          self.filterAttributes = config.SectionGet(self.configSection,
           'filter_attributes', list)
-      except ConfigSpecError:
+      except ConfigSpecError, ex:
+         if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+            raise ex
          pass
 
       if self.filterAttributes is not None:
@@ -187,16 +200,22 @@ class Deliverable(object):
                matchType = None
 
                try: 
-                  delivName = config.SectionGet(section, 'name')
+                  delivName = config.SectionGet(section, 'name').strip()
                   matchType = 'name'
-               except ConfigSpecError:
+               except ConfigSpecError, ex:
+                  if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+                     raise ex
+   
                   try: 
-                     delivRegex = config.SectionGet(section, 'regex')
+                     delivRegex = config.SectionGet(section, 'regex').strip()
                      matchType = 'regex'
-                  except ConfigSpecError:
-                     raise ConfigSpecError(
-                      Deliverable.ERROR_STR_NEED_NAME_OR_REGEX %
-                      Deliverable.DeliverableClassFromSectionName(section))
+                  except ConfigSpecError, ex:
+                     if ex.GetDetails() == ConfigSpecError.NO_OPTION_ERROR:
+                        raise ConfigSpecError(
+                         Deliverable.ERROR_STR_NEED_NAME_OR_REGEX %
+                         Deliverable.DeliverableClassFromSectionName(section))
+                     else:
+                        raise ex
 
                if ((delivName is not None and f == delivName) or 
                 (delivRegex is not None and re.search(delivRegex, f))):
