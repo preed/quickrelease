@@ -6,6 +6,11 @@ from quickrelease import constants
 from quickrelease.exception import ReleaseFrameworkError
 
 class ConfigSpecError(ReleaseFrameworkError):
+   NO_OPTION_ERROR = 0
+   INTERPOLATION_MISSING_OPTION_ERROR = 1
+   INTERPOLATION_SYNTAX_ERROR = 2
+   COERCION_TYPE_ERROR = 3
+
    def __init__(self, errorStr, details=None):
       ReleaseFrameworkError.__init__(self, errorStr, details)
 
@@ -136,7 +141,8 @@ class ConfigSpec:
             overrides = tuple(interpOverrides)
          except TypeError:
             raise ConfigSpecError("Invalid interpolation overrides "
-             "specified; must be convertable to a tuple.")
+             "specified; must be convertable to a tuple.",
+             ConfigSpecError.COERCION_TYPE_ERROR)
 
       try:
          if coercion is bool:
@@ -153,12 +159,17 @@ class ConfigSpec:
              getRawValues, overrides)
 
          raise ConfigSpecError("Invalid coercion type specified: %s" %
-          (coercion))
+          (coercion), ConfigSpecError.COERCION_TYPE_ERROR)
       except ConfigParser.NoOptionError, ex:
          raise ConfigSpecError("Undefined config variable '%s' requested "
-          "from section %s" % (name, self.currentSection), ex)
+          "from section %s" % (name, self.currentSection),
+          ConfigSpecError.NO_OPTION_ERROR)
+      except ConfigParser.InterpolationMissingOptionError, ex:
+         raise ConfigSpecError(str(ex),
+          ConfigSpecError.INTERPOLATION_MISSING_OPTION_ERROR)
       except ConfigParser.InterpolationSyntaxError, ex:
-         raise ConfigSpecError(str(ex), ex)
+         raise ConfigSpecError(str(ex),
+          ConfigSpecError.INTERPOLATION_SYNTAX_ERROR)
 
    def GetAll(self):
       return self.configSpec.items(self.currentSection)
