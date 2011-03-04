@@ -95,7 +95,6 @@ class Deliverable(object):
             try:
                attributeHandlerModParts = attributeHandler.split('.')
                mod = __import__('.'.join(attributeHandlerModParts[:-1]))
-               components = attributeHandler.split('.')
                for comp in attributeHandlerModParts[1:]:
                   mod = getattr(mod, comp)
 
