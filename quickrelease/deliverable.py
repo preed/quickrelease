@@ -247,7 +247,7 @@ class Deliverable(object):
                    delivDesc['class'], delivDesc['type']))
 
                raise ConfigSpecError("More than one deliverable class for "
-                "the file '%s': %s" % (matchType, ', '.join(matchedClassList)))
+                "the file %s: %s" % (fileLoc, ', '.join(matchedClassList)))
 
       if flushCache: 
          Deliverable.gDeliverablesCache = tuple(deliverables)
