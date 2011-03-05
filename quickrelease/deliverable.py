@@ -18,8 +18,8 @@ class Deliverable(object):
 
    gDeliverablesCache = None
 
-   def __init__(self, config, deliverableClass, deliverableFile, 
-    *args, **kwargs):
+   def __init__(self, deliverableFile, deliverableClass, config, *args,
+    **kwargs):
       object.__init__(self, *args, **kwargs)
 
       if not os.path.isabs(deliverableFile):
@@ -197,6 +197,7 @@ class Deliverable(object):
                delivRegex = None
                delivName = None
                matchType = None
+               subclassType = None
 
                try: 
                   delivName = config.SectionGet(section, 'name').strip()
@@ -216,13 +217,24 @@ class Deliverable(object):
                      else:
                         raise ex
 
+               #print "f is %s, name is %s, regex is %s" % (f, delivName, delivRegex)          
                if ((delivName is not None and f == delivName) or 
                 (delivRegex is not None and re.search(delivRegex, f))):
+                  try:
+                    subclassType = config.SectionGet(section,
+                     'subclass').strip()
+                  except ConfigSpecError, ex:
+                     if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+                        raise ex
+                     pass
+
                   delivClassDescription = { 'type': matchType,
-                                            'class' : 
-                    Deliverable.DeliverableClassFromSectionName(section),
+                                            'subclass' : subclassType,
+                                            'class' : Deliverable.DeliverableClassFromSectionName(section),
                                             'file' : os.path.join(root, f),
                   }
+
+
                   deliverableDescList.append(delivClassDescription)
 
             if len(deliverableDescList) == 0:
@@ -233,8 +245,25 @@ class Deliverable(object):
 
             if len(deliverableDescList) == 1:
                delivDesc = deliverableDescList[0]
-               deliverables.append(Deliverable(config, delivDesc['class'],
-                delivDesc['file']))
+
+               if delivDesc['subclass'] is not None:
+                  try:
+                     subclassParts = delivDesc['subclass'].split('.')
+                     mod = __import__('.'.join(subclassParts[:-1]))
+                     for comp in subclassParts[1:]:
+                        mod = getattr(mod, comp)
+
+                     newDelivObj = mod(delivDesc['file'], delivDesc['class'],
+                      config)
+                 
+                  except NameError, ex:
+                     raise ConfigSpecError("subclass error %s" % (ex)) 
+               else:
+                  newDelivObj = Deliverable(delivDesc['file'], 
+                   delivDesc['class'], config)
+
+               deliverables.append(newDelivObj)
+
             else:
                matchedClassList = []
                fileLoc = deliverableDescList[0]['file']
