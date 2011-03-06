@@ -352,11 +352,18 @@ def IsDeliverableSectionName(sectionName):
 def IsDeliverableSection(config, delivClass):
    try:
       config.SectionGet(DeliverableSectionNameFromClass(delivClass), 'name')
-   except ConfigSpecError:
-      try:
-         config.SectionGet(DeliverableSectionNameFromClass(delivClass), 'regex')
-      except ConfigSpecError:
-         return False
+   except ConfigSpecError, ex:
+      if ex.GetDetails() == ConfigSpecError.NO_OPTION_ERROR:
+         try:
+            config.SectionGet(DeliverableSectionNameFromClass(delivClass),
+             'regex')
+         except ConfigSpecError, subEx:
+            if subEx.GetDetails() == ConfigSpecError.NO_OPTION_ERROR:
+               return False
+            else:
+               raise subEX
+      else:
+         raise ex
 
    return True
 
