@@ -75,6 +75,12 @@ class ConfigSpec:
    def GetSection(self):
       return self.currentSection
 
+   def GetSectionItems(self, sectionName):
+      try:
+         return list(x[0] for x in self.GetRawConfig().items(sectionName))
+      except ConfigParser.NoSectionError:
+         raise ValueError("No config section '%s'" % sectionName)
+
    def GetDefaultSection(self):
       return self.defaultSection
 
