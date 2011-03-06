@@ -16,7 +16,7 @@ class Deliverable(object):
    ERROR_STR_NEED_NAME_OR_REGEX = ("Deliverable class '%s' must define a name "
     "or a regex for the deliverable.")
 
-   gDeliverablesCache = None
+   _gDeliverablesCache = {}
 
    def __init__(self, deliverableFile, deliverableClass, config, *args,
     **kwargs):
@@ -167,13 +167,12 @@ class Deliverable(object):
          assert False, "Non-str, non-function attribute handler: %s" % (
           handlerType)
 
-def FindDeliverables(config, deliverableDir, useCache=True, flushCache=True):
+def FindDeliverables(deliverableDir, config):
    if not os.path.isdir(deliverableDir):
       raise ValueError("Invalid deliverable directory: %s" % 
        (deliverableDir))
 
-   if (Deliverable.gDeliverablesCache is not None and
-    (useCache and not flushCache)):
+   if Deliverable._gDeliverablesCache.has_key(deliverableDir):
       return None
 
    deliverables = []
@@ -181,10 +180,11 @@ def FindDeliverables(config, deliverableDir, useCache=True, flushCache=True):
 
    ignoreUndefinedDeliverables = True 
    try:
-      ignoreUndefinedDeliverables = config.Get(
-       'ignore_undefined_deliverables', bool)
-   except ConfigSpecError:
-      pass
+      ignoreUndefinedDeliverables = config.Get('ignore_undefined_deliverables',
+       bool)
+   except ConfigSpecError, ex:
+      if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+         raise ex
 
    for root, dirs, files in os.walk(deliverableDir):
       for f in files:
@@ -274,44 +274,41 @@ def FindDeliverables(config, deliverableDir, useCache=True, flushCache=True):
             raise ConfigSpecError("More than one deliverable class for "
              "the file %s: %s" % (fileLoc, ', '.join(matchedClassList)))
 
-   if flushCache: 
-      Deliverable.gDeliverablesCache = tuple(deliverables)
-
+   Deliverable._gDeliverablesCache[deliverableDir] = tuple(deliverables)
    return len(tuple(deliverables))
 
-def GetAllDeliverables(useCache=True, config=None, deliverableDir=None):
-   if Deliverable.gDeliverablesCache is None or not useCache:
-      if config is None or deliverableDir is None:
-         if useCache:
-            raise ValueError("Must call FindDeliverables() before "
-             "GetAllDeliverables()")
-         else:
-            raise ValueError("When not using the deliverable cache, a "
-             "ConfigSpec and deliverable directory must be provided")
-  
-      return FindDeliverables(config, deliverableDir, useCache, False)
-   
-   # check if copy is necessary; may be ok if immutable
-   return Deliverable.gDeliverablesCache
+def GetAllDeliverables(deliverableDir=None):
+   if deliverableDir is not None:
+      if not Deliverable._gDeliverablesCache.has_key(deliverableDir):
+         raise ValueError("Directory %d has not been scanned for deliverables "
+          "yet; use FindDeliverables()" % (deliverableDir))
 
-def GetDeliverable(deliverableName, useCache=True, config=None,
- deliverableDir=None):
+      return tuple(Deliverable._gDeliverablesCache[deliverableDir])
+   else:
+      allDeliverables = []
 
-   filterValues = deliverableName.split(':')
+      for dDirs in Deliverable._gDeliverablesCache.keys():
+         allDeliverables.append(Deliverable._gDeliverablesCache[dDirs])
+
+      return tuple(allDeliverables)
+
+def GetDeliverables(deliverableClass, deliverableDir=None):
+   filterValues = deliverableClass.split(':')
    possibleDelivs = []
 
-   for deliv in GetAllDeliverables(useCache, config, deliverableDir):
-      ## TODO deliverable mask in config, i.e. installer:platform, but make
-      ## platform defineable
+   for deliv in GetAllDeliverables(deliverableDir):
       if filterValues[0] == deliv.GetName():
-         if len(filterValues) == 1:
-            return deliv
-         else:
-            possibleDelivs.append(deliv)
+         possibleDelivs.append(deliv)
 
    filteredDeliverableList = []
    for pd in possibleDelivs:
       filterNames = pd.GetFilterAttributes()
+   
+      if filterNames is None and len(filterValues) > 1:
+         raise ValueError("GetDeliverables passed filter '%s' for a "
+          "deliverable class that defines no filter attributes" %
+          ':'.join(filterValues[1:]))
+
       skipThisDeliv = False
       for ndx in range(len(filterValues))[1:]:
          if pd.GetAttribute(filterNames[ndx]) != filterValues[ndx]:
@@ -323,12 +320,27 @@ def GetDeliverable(deliverableName, useCache=True, config=None,
 
       filteredDeliverableList.append(pd)
 
-   if len(filteredDeliverableList) == 1:
-      return filteredDeliverableList[0]
-   else:
+   return filteredDeliverableList
+
+def GetDeliverable(deliverableClass, deliverableDir=None):
+   possibleDelivs = GetDeliverables(deliverableClass, deliverableDir)
+
+   if len(possibleDelivs) > 1:
       raise ConfigSpecError("More than one deliverable matched for "
-       "deliverable name '%s': %s" % (deliverableName,
-       ', '.join(filteredDeliverableList)))
+       "deliverable class '%s': %s" % (deliverableClass,
+       ', '.join(possibleDelivs)))
+
+   return possibleDelivs[0]
+
+def FlushDeliverableCache(deliverableDir=None):
+   if deliverableDir is None:
+      Deliverable._gDeliverablesCache.clear()
+   else:
+      try:
+         del Deliverable._gDeliverablesCache[deliverableDir]
+      except KeyError:
+         raise ValueError("Deliverable directory %d not in cache" %
+          (deliverableDir))
 
 def GetDeliverableSections(config):
    retSections = []
@@ -337,7 +349,7 @@ def GetDeliverableSections(config):
       if IsDeliverableSectionName(section):
          retSections.append(section)
 
-   return tuple(retSections)
+   return retSections
 
 def DeliverableClassFromSectionName(sectionName):
    return re.sub('^%s' % (Deliverable.DELIVERABLE_CONFIG_PREFIX), '',
@@ -360,8 +372,7 @@ def IsDeliverableSection(config, delivClass):
          except ConfigSpecError, subEx:
             if subEx.GetDetails() == ConfigSpecError.NO_OPTION_ERROR:
                return False
-            else:
-               raise subEX
+            raise subEx
       else:
          raise ex
 
