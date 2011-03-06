@@ -4,7 +4,7 @@ import os
 import re
 import types
 
-from config import ConfigSpecError, ConfigSpec
+from quickrelease.config import ConfigSpecError, ConfigSpec
 
 #from quickrelease.steps.TestSteps import ParseAddonName
 
@@ -27,12 +27,11 @@ class Deliverable(object):
           "constructor")
       elif not os.path.isfile(deliverableFile):
          raise ValueError("Non-existent file passed to Deliverable constructor")
-      elif not Deliverable.IsDeliverableSection(config, deliverableClass):
+      elif not IsDeliverableSection(config, deliverableClass):
          raise ValueError("Non-existent deliverable class passed to "
           "Deliverable constructor: %s" % deliverableClass)
 
-      self.configSection = self.DeliverableSectionNameFromClass(
-       deliverableClass)
+      self.configSection = DeliverableSectionNameFromClass(deliverableClass)
       self.deliverableClass = deliverableClass
       self.file = deliverableFile
       self.regex = None
@@ -168,209 +167,196 @@ class Deliverable(object):
          assert False, "Non-str, non-function attribute handler: %s" % (
           handlerType)
 
+def FindDeliverables(config, deliverableDir, useCache=True, flushCache=True):
+   if not os.path.isdir(deliverableDir):
+      raise ValueError("Invalid deliverable directory: %s" % 
+       (deliverableDir))
 
-   @staticmethod
-   def FindDeliverables(config, deliverableDir, useCache=True, flushCache=True):
-      if not os.path.isdir(deliverableDir):
-         raise ValueError("Invalid deliverable directory: %s" % 
-          (deliverableDir))
+   if (Deliverable.gDeliverablesCache is not None and
+    (useCache and not flushCache)):
+      return None
 
-      if (Deliverable.gDeliverablesCache is not None and
-       (useCache and not flushCache)):
-         return None
+   deliverables = []
+   deliverableSections = GetDeliverableSections(config)
 
-      deliverables = []
-      deliverableSections = Deliverable.GetDeliverableSections(config)
+   ignoreUndefinedDeliverables = True 
+   try:
+      ignoreUndefinedDeliverables = config.Get(
+       'ignore_undefined_deliverables', bool)
+   except ConfigSpecError:
+      pass
 
-      ignoreUndefinedDeliverables = True 
-      try:
-         ignoreUndefinedDeliverables = config.Get(
-          'ignore_undefined_deliverables', bool)
-      except ConfigSpecError:
-         pass
+   for root, dirs, files in os.walk(deliverableDir):
+      for f in files:
+         #print "Looking at: %s" % (os.path.join(root, f))
+         deliverableDescList = []
+         for section in deliverableSections:
+            delivRegex = None
+            delivName = None
+            matchType = None
+            subclassType = None
 
-      for root, dirs, files in os.walk(deliverableDir):
-         for f in files:
-            #print "Looking at: %s" % (os.path.join(root, f))
-            deliverableDescList = []
-            for section in deliverableSections:
-               delivRegex = None
-               delivName = None
-               matchType = None
-               subclassType = None
+            try: 
+               delivName = config.SectionGet(section, 'name').strip()
+               matchType = 'name'
+            except ConfigSpecError, ex:
+               if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+                  raise ex
 
                try: 
-                  delivName = config.SectionGet(section, 'name').strip()
-                  matchType = 'name'
+                  delivRegex = config.SectionGet(section, 'regex').strip()
+                  matchType = 'regex'
+               except ConfigSpecError, ex:
+                  if ex.GetDetails() == ConfigSpecError.NO_OPTION_ERROR:
+                     raise ConfigSpecError(
+                      Deliverable.ERROR_STR_NEED_NAME_OR_REGEX %
+                      DeliverableClassFromSectionName(section))
+                  else:
+                     raise ex
+
+            #print "f is %s, name is %s, regex is %s" % (f, delivName, delivRegex)          
+            if ((delivName is not None and f == delivName) or 
+             (delivRegex is not None and re.search(delivRegex, f))):
+               try:
+                 subclassType = config.SectionGet(section,
+                  'subclass').strip()
                except ConfigSpecError, ex:
                   if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
                      raise ex
+                  pass
+
+               delivClassDescription = { 'type': matchType,
+                                         'subclass' : subclassType,
+                                         'class' : DeliverableClassFromSectionName(section),
+                                         'file' : os.path.join(root, f),
+               }
+
+
+               deliverableDescList.append(delivClassDescription)
+
+         if len(deliverableDescList) == 0:
+            if not ignoreUndefinedDeliverables:
+               assert False, "Should be a release framework error."
+            else:
+               continue
+
+         if len(deliverableDescList) == 1:
+            delivDesc = deliverableDescList[0]
+
+            if delivDesc['subclass'] is not None:
+               try:
+                  subclassParts = delivDesc['subclass'].split('.')
+                  mod = __import__('.'.join(subclassParts[:-1]))
+                  for comp in subclassParts[1:]:
+                     mod = getattr(mod, comp)
+
+                  newDelivObj = mod(delivDesc['file'], delivDesc['class'],
+                   config)
+              
+               except NameError, ex:
+                  raise ConfigSpecError("subclass error %s" % (ex)) 
+            else:
+               newDelivObj = Deliverable(delivDesc['file'], 
+                delivDesc['class'], config)
+
+            deliverables.append(newDelivObj)
+
+         else:
+            matchedClassList = []
+            fileLoc = deliverableDescList[0]['file']
+            for delivDesc in deliverableDescList:
+               assert fileLoc == delivDesc['file'], ("Deliverable file name "
+                "mismatch (%s vs %s)?" % (fileLoc, delivDesc['file']))
+
+               matchedClassList.append("%s (matched via %s)" % (
+                delivDesc['class'], delivDesc['type']))
+
+            raise ConfigSpecError("More than one deliverable class for "
+             "the file %s: %s" % (fileLoc, ', '.join(matchedClassList)))
+
+   if flushCache: 
+      Deliverable.gDeliverablesCache = tuple(deliverables)
+
+   return len(tuple(deliverables))
+
+def GetAllDeliverables(useCache=True, config=None, deliverableDir=None):
+   if Deliverable.gDeliverablesCache is None or not useCache:
+      if config is None or deliverableDir is None:
+         if useCache:
+            raise ValueError("Must call FindDeliverables() before "
+             "GetAllDeliverables()")
+         else:
+            raise ValueError("When not using the deliverable cache, a "
+             "ConfigSpec and deliverable directory must be provided")
+  
+      return FindDeliverables(config, deliverableDir, useCache, False)
    
-                  try: 
-                     delivRegex = config.SectionGet(section, 'regex').strip()
-                     matchType = 'regex'
-                  except ConfigSpecError, ex:
-                     if ex.GetDetails() == ConfigSpecError.NO_OPTION_ERROR:
-                        raise ConfigSpecError(
-                         Deliverable.ERROR_STR_NEED_NAME_OR_REGEX %
-                         Deliverable.DeliverableClassFromSectionName(section))
-                     else:
-                        raise ex
+   # check if copy is necessary; may be ok if immutable
+   return Deliverable.gDeliverablesCache
 
-               #print "f is %s, name is %s, regex is %s" % (f, delivName, delivRegex)          
-               if ((delivName is not None and f == delivName) or 
-                (delivRegex is not None and re.search(delivRegex, f))):
-                  try:
-                    subclassType = config.SectionGet(section,
-                     'subclass').strip()
-                  except ConfigSpecError, ex:
-                     if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
-                        raise ex
-                     pass
+def GetDeliverable(deliverableName, useCache=True, config=None,
+ deliverableDir=None):
 
-                  delivClassDescription = { 'type': matchType,
-                                            'subclass' : subclassType,
-                                            'class' : Deliverable.DeliverableClassFromSectionName(section),
-                                            'file' : os.path.join(root, f),
-                  }
+   filterValues = deliverableName.split(':')
+   possibleDelivs = []
 
+   for deliv in GetAllDeliverables(useCache, config, deliverableDir):
+      ## TODO deliverable mask in config, i.e. installer:platform, but make
+      ## platform defineable
+      if filterValues[0] == deliv.GetName():
+         if len(filterValues) == 1:
+            return deliv
+         else:
+            possibleDelivs.append(deliv)
 
-                  deliverableDescList.append(delivClassDescription)
+   filteredDeliverableList = []
+   for pd in possibleDelivs:
+      filterNames = pd.GetFilterAttributes()
+      skipThisDeliv = False
+      for ndx in range(len(filterValues))[1:]:
+         if pd.GetAttribute(filterNames[ndx]) != filterValues[ndx]:
+            skipThisDeliv = True
+            break
 
-            if len(deliverableDescList) == 0:
-               if not ignoreUndefinedDeliverables:
-                  assert False, "Should be a release framework error."
-               else:
-                  continue
+      if skipThisDeliv:
+         continue
 
-            if len(deliverableDescList) == 1:
-               delivDesc = deliverableDescList[0]
+      filteredDeliverableList.append(pd)
 
-               if delivDesc['subclass'] is not None:
-                  try:
-                     subclassParts = delivDesc['subclass'].split('.')
-                     mod = __import__('.'.join(subclassParts[:-1]))
-                     for comp in subclassParts[1:]:
-                        mod = getattr(mod, comp)
+   if len(filteredDeliverableList) == 1:
+      return filteredDeliverableList[0]
+   else:
+      raise ConfigSpecError("More than one deliverable matched for "
+       "deliverable name '%s': %s" % (deliverableName,
+       ', '.join(filteredDeliverableList)))
 
-                     newDelivObj = mod(delivDesc['file'], delivDesc['class'],
-                      config)
-                 
-                  except NameError, ex:
-                     raise ConfigSpecError("subclass error %s" % (ex)) 
-               else:
-                  newDelivObj = Deliverable(delivDesc['file'], 
-                   delivDesc['class'], config)
+def GetDeliverableSections(config):
+   retSections = []
 
-               deliverables.append(newDelivObj)
+   for section in config.GetSectionList():
+      if IsDeliverableSectionName(section):
+         retSections.append(section)
 
-            else:
-               matchedClassList = []
-               fileLoc = deliverableDescList[0]['file']
-               for delivDesc in deliverableDescList:
-                  assert fileLoc == delivDesc['file'], ("Deliverable file name "
-                   "mismatch (%s vs %s)?" % (fileLoc, delivDesc['file']))
+   return tuple(retSections)
 
-                  matchedClassList.append("%s (matched via %s)" % (
-                   delivDesc['class'], delivDesc['type']))
+def DeliverableClassFromSectionName(sectionName):
+   return re.sub('^%s' % (Deliverable.DELIVERABLE_CONFIG_PREFIX), '',
+    sectionName)
 
-               raise ConfigSpecError("More than one deliverable class for "
-                "the file %s: %s" % (fileLoc, ', '.join(matchedClassList)))
+def DeliverableSectionNameFromClass(delivClass):
+   return Deliverable.DELIVERABLE_CONFIG_PREFIX + delivClass
 
-      if flushCache: 
-         Deliverable.gDeliverablesCache = tuple(deliverables)
+def IsDeliverableSectionName(sectionName):
+   return sectionName.startswith(Deliverable.DELIVERABLE_CONFIG_PREFIX)
 
-      return len(tuple(deliverables))
-
-   @staticmethod
-   def GetAllDeliverables(useCache=True, config=None, deliverableDir=None):
-      if Deliverable.gDeliverablesCache is None or not useCache:
-         if config is None or deliverableDir is None:
-            if useCache:
-               raise ValueError("Must call FindDeliverables() before "
-                "GetAllDeliverables()")
-            else:
-               raise ValueError("When not using the deliverable cache, a "
-                "ConfigSpec and deliverable directory must be provided")
-     
-         return Deliverable.FindDeliverables(config, deliverableDir, useCache,
-          False)
-      
-      # check if copy is necessary; may be ok if immutable
-      return Deliverable.gDeliverablesCache
-
-   @staticmethod
-   def GetDeliverable(deliverableName, useCache=True, config=None,
-    deliverableDir=None):
-
-      filterValues = deliverableName.split(':')
-      possibleDelivs = []
-
-      for deliv in Deliverable.GetAllDeliverables(useCache, config,
-       deliverableDir):
-         ## TODO deliverable mask in config, i.e. installer:platform, but make
-         ## platform defineable
-         if filterValues[0] == deliv.GetName():
-            if len(filterValues) == 1:
-               return deliv
-            else:
-               possibleDelivs.append(deliv)
-
-      filteredDeliverableList = []
-      for pd in possibleDelivs:
-         filterNames = pd.GetFilterAttributes()
-         skipThisDeliv = False
-         for ndx in range(len(filterValues))[1:]:
-            if pd.GetAttribute(filterNames[ndx]) != filterValues[ndx]:
-               skipThisDeliv = True
-               break
-
-         if skipThisDeliv:
-            continue
-
-         filteredDeliverableList.append(pd)
-
-      if len(filteredDeliverableList) == 1:
-         return filteredDeliverableList[0]
-      else:
-         raise ConfigSpecError("More than one deliverable matched for "
-          "deliverable name '%s': %s" % (deliverableName,
-          ', '.join(filteredDeliverableList)))
-
-   @staticmethod
-   def GetDeliverableSections(config):
-      retSections = []
-
-      for section in config.GetSectionList():
-         if Deliverable.IsDeliverableSectionName(section):
-            retSections.append(section)
-
-      return tuple(retSections)
-
-   @staticmethod
-   def DeliverableClassFromSectionName(sectionName):
-      return re.sub('^%s' % (Deliverable.DELIVERABLE_CONFIG_PREFIX), '',
-       sectionName)
-
-   @staticmethod
-   def DeliverableSectionNameFromClass(delivClass):
-      return Deliverable.DELIVERABLE_CONFIG_PREFIX + delivClass
-
-   @staticmethod
-   def IsDeliverableSectionName(sectionName):
-      return sectionName.startswith(Deliverable.DELIVERABLE_CONFIG_PREFIX)
-
-   @staticmethod
-   def IsDeliverableSection(config, delivClass):
+def IsDeliverableSection(config, delivClass):
+   try:
+      config.SectionGet(DeliverableSectionNameFromClass(delivClass), 'name')
+   except ConfigSpecError:
       try:
-         config.SectionGet(Deliverable.DeliverableSectionNameFromClass(
-          delivClass), 'name')
+         config.SectionGet(DeliverableSectionNameFromClass(delivClass), 'regex')
       except ConfigSpecError:
-         try:
-            config.SectionGet(Deliverable.DeliverableSectionNameFromClass(
-             delivClass), 'regex')
-         except ConfigSpecError:
-            return False
+         return False
 
-      return True
+   return True
 
