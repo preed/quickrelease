@@ -40,52 +40,33 @@ class Deliverable(object):
       self.attributes = []
       self.attributeHandlers = {}
 
-      try:
-         self.name = config.SectionGet(self.configSection, 'name').strip()
-      except ConfigSpecError, ex:
-         if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
-            raise ex
-         pass
+      deliverableSectionItems = config.GetSectionItems(self.configSection)
 
-      try:
+      if 'name' in deliverableSectionItems:
+         self.name = config.SectionGet(self.configSection, 'name').strip()
+
+      if 'regex' in deliverableSectionItems:
          self.regex = config.SectionGet(self.configSection, 'regex').strip()
-      except ConfigSpecError, ex:
-         if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
-            raise ex
-         pass
 
       if self.regex is None and self.name is None:
          raise ConfigSpecError(self.ERROR_STR_NEED_NAME_OR_REGEX %
           (deliverableClass))
 
-      try:
-         self.attributes = config.SectionGet(self.configSection, 'attributes',
-          list)
-      except ConfigSpecError, ex:
-         if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
-            raise ex
-         pass
+      if 'attributes' in deliverableSectionItems:
+         self.attributes = config.SectionGet(self.configSection,
+          'attributes').strip()
 
       for attr in self.attributes:
          attributeRegex = None
          attributeHandler = None
 
-         try:
+         if ('attrib_%s_handler' % (attr)) in deliverableSectionItems:
             attributeHandler = config.SectionGet(self.configSection,
              'attrib_%s_handler' % (attr))
-         except ConfigSpecError, ex:
-            if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
-               raise ex
-
-            try:
-               attributeRegex = config.SectionGet(self.configSection,
-                'attrib_%s_regex' % (attr))
-            except ConfigSpecError:
-               if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
-                  raise ex
-               pass
-
-         if attributeRegex is None and attributeHandler is None:
+         elif ('attrib_%s_regex' % (attr)) in deliverableSectionItems:
+            attributeRegex = config.SectionGet(self.configSection,
+             'attrib_%s_regex' % (attr))
+         else:
             raise ConfigSpecError("Deliverable class '%s' defines "
              "attribute '%s', but doesn't define a regex or handler for it." %
              (deliverableClass, attr))
@@ -107,20 +88,15 @@ class Deliverable(object):
          else:
             assert False, "Shouldn't reach this"
 
-      try:
+      if 'filter_attributes' in deliverableSectionItems:
          self.filterAttributes = config.SectionGet(self.configSection,
           'filter_attributes', list)
-      except ConfigSpecError, ex:
-         if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
-            raise ex
-         pass
 
       if self.filterAttributes is not None:
          for fa in self.filterAttributes:
             if fa not in self.attributes:
                raise ConfigSpecError("Deliverable class '%s' defines invalid "
                 "filter attribute '%s'" % (deliverableClass, fa))
-
 
    def __str__(self):
       return self.GetLocation()
@@ -362,19 +338,6 @@ def IsDeliverableSectionName(sectionName):
    return sectionName.startswith(Deliverable.DELIVERABLE_CONFIG_PREFIX)
 
 def IsDeliverableSection(config, delivClass):
-   try:
-      config.SectionGet(DeliverableSectionNameFromClass(delivClass), 'name')
-   except ConfigSpecError, ex:
-      if ex.GetDetails() == ConfigSpecError.NO_OPTION_ERROR:
-         try:
-            config.SectionGet(DeliverableSectionNameFromClass(delivClass),
-             'regex')
-         except ConfigSpecError, subEx:
-            if subEx.GetDetails() == ConfigSpecError.NO_OPTION_ERROR:
-               return False
-            raise subEx
-      else:
-         raise ex
-
-   return True
-
+   sectionItems = config.GetSectionItems(DeliverableSectionNameFromClass(
+    delivClass))
+   return 'name' in sectionItems or 'regex' in sectionItems
