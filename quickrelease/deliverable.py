@@ -129,7 +129,10 @@ class Deliverable(object):
       return self.regex
 
    def GetFilterAttributes(self):
-      return tuple(self.filterAttributes)
+      if self.filterAttributes is None:
+         return None
+      else:
+         return tuple(self.filterAttributes)
 
    def GetAttributes(self):
       return tuple(self.attributes)
