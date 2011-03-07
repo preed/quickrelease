@@ -57,8 +57,8 @@ class Deliverable(object):
           (deliverableClass))
 
       if 'attributes' in deliverableSectionItems:
-         self.attributes = config.SectionGet(self.configSection,
-          'attributes').strip()
+         self.attributes = config.SectionGet(self.configSection, 'attributes',
+          list)
 
       for attr in self.attributes:
          attributeValue = None
