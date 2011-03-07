@@ -18,6 +18,10 @@ class Deliverable(object):
 
    _gDeliverablesCache = {}
 
+   ATTRIB_TYPE_CALLBACK = 0
+   ATTRIB_TYPE_REGEX = 1
+   ATTRIB_TYPE_VALUE = 2
+
    def __init__(self, deliverableFile, deliverableClass, config, *args,
     **kwargs):
       object.__init__(self, *args, **kwargs)
@@ -57,36 +61,48 @@ class Deliverable(object):
           'attributes').strip()
 
       for attr in self.attributes:
-         attributeRegex = None
-         attributeHandler = None
+         attributeValue = None
+         attributeType = None
 
          if ('attrib_%s_handler' % (attr)) in deliverableSectionItems:
-            attributeHandler = config.SectionGet(self.configSection,
+            attributeType = Deliverable.ATTRIB_TYPE_CALLBACK
+            attributeValue = config.SectionGet(self.configSection,
              'attrib_%s_handler' % (attr))
          elif ('attrib_%s_regex' % (attr)) in deliverableSectionItems:
-            attributeRegex = config.SectionGet(self.configSection,
+            attributeType = Deliverable.ATTRIB_TYPE_REGEX
+            attributeValue = config.SectionGet(self.configSection,
              'attrib_%s_regex' % (attr))
+         elif ('attrib_%s_value' % (attr)) in deliverableSectionItems:
+            attributeType = Deliverable.ATTRIB_TYPE_VALUE
+            attributeValue = config.SectionGet(self.configSection,
+             'attrib_%s_value' % (attr))
          else:
             raise ConfigSpecError("Deliverable class '%s' defines "
              "attribute '%s', but doesn't define a regex or handler for it." %
              (deliverableClass, attr))
- 
-         if attributeHandler is not None:
+
+         attributeHandlerDescriptor = {}
+         attributeHandlerDescriptor['type'] = attributeType
+
+         if attributeType == Deliverable.ATTRIB_TYPE_CALLBACK:
             try:
-               attributeHandlerModParts = attributeHandler.split('.')
+               attributeHandlerModParts = attributeValue.split('.')
                mod = __import__('.'.join(attributeHandlerModParts[:-1]))
                for comp in attributeHandlerModParts[1:]:
                   mod = getattr(mod, comp)
 
-               self.attributeHandlers[attr] = mod
+               attributeHandlerDescriptor['handler'] = mod
             except NameError, ex:
                raise ConfigSpecError("Deliverable class '%s' defines an "
                 "attribute handler for attribute '%s', but the handler is "
                 "undefined: %s" % (self.deliverableClass, attr, str(ex)))
-         elif attributeRegex is not None:
-            self.attributeHandlers[attr] = attributeRegex
+         elif (attributeType == Deliverable.ATTRIB_TYPE_REGEX or
+          attributeType == Deliverable.ATTRIB_TYPE_VALUE):
+            attributeHandlerDescriptor['handler'] = attributeValue
          else:
-            assert False, "Shouldn't reach this"
+            assert False, "Unknown attribute handler type: %s" % (attributeType)
+
+         self.attributeHandlers[attr] = attributeHandlerDescriptor
 
       if 'filter_attributes' in deliverableSectionItems:
          self.filterAttributes = config.SectionGet(self.configSection,
@@ -124,10 +140,12 @@ class Deliverable(object):
          raise ValueError("Deliverable class '%s' has no attribute '%s" %
           (self.GetName(), attribute))
 
-      handlerType = type(self.attributeHandlers[attribute])
-
-      if handlerType is str:
-         attribMatch = re.search(self.attributeHandlers[attribute],
+      handlerType = self.attributeHandlers[attribute]['type']
+  
+      if handlerType == Deliverable.ATTRIB_TYPE_VALUE:
+         return self.attributeHandlers[attribute]['handler']
+      elif handlerType == Deliverable.ATTRIB_TYPE_REGEX:
+         attribMatch = re.search(self.attributeHandlers[attribute]['handler'],
           self.GetFileName())
 
          if attribMatch is None:
@@ -137,11 +155,10 @@ class Deliverable(object):
          else:
             return attribMatch.groups()
 
-      elif handlerType is types.FunctionType:
-         return self.attributeHandlers[attribute](self)
+      elif handlerType == Deliverable.ATTRIB_TYPE_CALLBACK:
+         return self.attributeHandlers[attribute]['handler'](self)
       else:
-         assert False, "Non-str, non-function attribute handler: %s" % (
-          handlerType)
+         assert False, "Unknown attribute handler type: %s" % (handlerType)
 
 def FindDeliverables(deliverableDir, config):
    if not os.path.isdir(deliverableDir):
