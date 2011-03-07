@@ -6,11 +6,9 @@ import types
 
 from quickrelease.config import ConfigSpecError, ConfigSpec
 
-#from quickrelease.steps.TestSteps import ParseAddonName
-
 class Deliverable(object):
-   DELIVERABLE_SECTION_CLASS = 'deliverable'
-   DELIVERABLE_CONFIG_PREFIX = (DELIVERABLE_SECTION_CLASS +
+   DELIVERABLE_SECTION_PREFIX = 'deliverable'
+   DELIVERABLE_CONFIG_PREFIX = (DELIVERABLE_SECTION_PREFIX +
     ConfigSpec.CONFIG_SECTION_DELIMETER)
 
    ERROR_STR_NEED_NAME_OR_REGEX = ("Deliverable class '%s' must define a name "
@@ -78,7 +76,7 @@ class Deliverable(object):
              'attrib_%s_value' % (attr))
          else:
             raise ConfigSpecError("Deliverable class '%s' defines "
-             "attribute '%s', but doesn't define a regex or handler for it." %
+             "attribute '%s', but doesn't define handler for it." %
              (deliverableClass, attr))
 
          attributeHandlerDescriptor = {}
@@ -94,8 +92,9 @@ class Deliverable(object):
                attributeHandlerDescriptor['handler'] = mod
             except NameError, ex:
                raise ConfigSpecError("Deliverable class '%s' defines an "
-                "attribute handler for attribute '%s', but the handler is "
-                "undefined: %s" % (self.deliverableClass, attr, str(ex)))
+                "attribute callback handler for attribute '%s', but the "
+                "callback is undefined: %s" % (self.deliverableClass, attr,
+                str(ex)))
          elif (attributeType == Deliverable.ATTRIB_TYPE_REGEX or
           attributeType == Deliverable.ATTRIB_TYPE_VALUE):
             attributeHandlerDescriptor['handler'] = attributeValue
@@ -162,8 +161,7 @@ class Deliverable(object):
 
 def FindDeliverables(deliverableDir, config):
    if not os.path.isdir(deliverableDir):
-      raise ValueError("Invalid deliverable directory: %s" % 
-       (deliverableDir))
+      raise ValueError("Invalid deliverable directory: %s" % (deliverableDir))
 
    if Deliverable._gDeliverablesCache.has_key(deliverableDir):
       return None
