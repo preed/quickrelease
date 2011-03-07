@@ -283,8 +283,9 @@ def GetAllDeliverables(deliverableDir=None):
 
       allDeliverables = []
 
-      for dDirs in Deliverable._gDeliverablesCache.keys():
-         allDeliverables.append(Deliverable._gDeliverablesCache[dDirs])
+      for dDirs in cacheKeys:
+         for deliv in Deliverable._gDeliverablesCache[dDirs]:
+            allDeliverables.append(deliv)
 
       return tuple(allDeliverables)
 
