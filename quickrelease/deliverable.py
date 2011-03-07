@@ -284,32 +284,69 @@ def GetAllDeliverables(deliverableDir=None):
       return tuple(allDeliverables)
 
 def GetDeliverables(deliverableClass, deliverableDir=None):
-   filterValues = deliverableClass.split(':')
-   possibleDelivs = []
-
-   for deliv in GetAllDeliverables(deliverableDir):
-      if filterValues[0] == deliv.GetName():
-         possibleDelivs.append(deliv)
-
+   filterArgs = deliverableClass.split(':')
+   filterArgsLen = len(filterArgs)
    filteredDeliverableList = []
-   for pd in possibleDelivs:
-      filterNames = pd.GetFilterAttributes()
-   
-      if filterNames is None and len(filterValues) > 1:
-         raise ValueError("GetDeliverables passed filter '%s' for a "
-          "deliverable class that defines no filter attributes" %
-          ':'.join(filterValues[1:]))
+
+   # Process the static filters, given in the config file
+   for deliv in GetAllDeliverables(deliverableDir):
+      staticFilters = deliv.GetName().split(':')
+      staticFilterLen = len(staticFilters)
+
+      filterNdx = 0
 
       skipThisDeliv = False
-      for ndx in range(len(filterValues))[1:]:
-         if pd.GetAttribute(filterNames[ndx]) != filterValues[ndx]:
+      while filterNdx < filterArgsLen and filterNdx < staticFilterLen:
+         if filterArgs[filterNdx] != staticFilters[filterNdx]:
             skipThisDeliv = True
             break
+
+         filterNdx += 1
 
       if skipThisDeliv:
          continue
 
-      filteredDeliverableList.append(pd)
+      # If we've parsed all of the filter arguments, we're done
+      if filterNdx == filterArgsLen:
+         filteredDeliverableList.append(deliv)
+         continue
+
+      dynamicFilters = deliv.GetFilterAttributes()
+
+      if dynamicFilters is None and filterNdx < filterArgsLen:
+         raise ValueError("GetDeliverables passed filter '%s' for a "
+          "deliverable class that defines no filter attributes" %
+          ':'.join(filterArgs[filterNdx:]))
+
+      dynamicFilterLen = len(dynamicFilters)
+
+      while filterNdx < filterArgsLen:
+         dynNdx = filterNdx - staticFilterLen
+         assert dynNdx >= 0, "Invalid (negative) dynamic filter index."
+         if dynNdx >= dynamicFilterLen:
+            availableFilters = staticFilters[1:] + list(dynamicFilters)
+            availableFiltersStr = ', '.join(availableFilters)
+            filterCount = len(availableFilters)
+            if filterCount > 1:
+               pluralFilters = "s"
+            else:
+               pluralFilters = ""
+
+            raise ValueError("GetDeliverables passed extra filter '%s' "
+             "for deliverable %s; %s defines %d filter%s: %s." % (
+             ':'.join(filterArgs[filterNdx:]), deliv.GetName(), deliv.GetName(),
+             filterCount, pluralFilters, availableFiltersStr))
+
+         if deliv.GetAttribute(dynamicFilters[dynNdx]) != filterArgs[filterNdx]:
+            skipThisDeliv = True
+            break
+
+         filterNdx += 1
+
+      if skipThisDeliv:
+         continue
+
+      filteredDeliverableList.append(deliv)
 
    return filteredDeliverableList
 
