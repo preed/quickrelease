@@ -187,34 +187,25 @@ def FindDeliverables(deliverableDir, config):
             matchType = None
             subclassType = None
 
-            try: 
+            sectionItems = config.GetSectionItems(section)
+
+            if 'name' in sectionItems:
                delivName = config.SectionGet(section, 'name').strip()
                matchType = 'name'
-            except ConfigSpecError, ex:
-               if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
-                  raise ex
-
-               try: 
-                  delivRegex = config.SectionGet(section, 'regex').strip()
-                  matchType = 'regex'
-               except ConfigSpecError, ex:
-                  if ex.GetDetails() == ConfigSpecError.NO_OPTION_ERROR:
-                     raise ConfigSpecError(
-                      Deliverable.ERROR_STR_NEED_NAME_OR_REGEX %
-                      DeliverableClassFromSectionName(section))
-                  else:
-                     raise ex
+            elif 'regex' in sectionItems:
+               delivRegex = config.SectionGet(section, 'regex').strip()
+               matchType = 'regex'
+            else:
+               raise ConfigSpecError(Deliverable.ERROR_STR_NEED_NAME_OR_REGEX %
+                DeliverableClassFromSectionName(section))
 
             #print "f is %s, name is %s, regex is %s" % (f, delivName, delivRegex)          
             if ((delivName is not None and f == delivName) or 
              (delivRegex is not None and re.search(delivRegex, f))):
-               try:
+
+               if 'subclass' in sectionItems:
                  subclassType = config.SectionGet(section,
                   'subclass').strip()
-               except ConfigSpecError, ex:
-                  if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
-                     raise ex
-                  pass
 
                delivClassDescription = { 'type': matchType,
                                          'subclass' : subclassType,
