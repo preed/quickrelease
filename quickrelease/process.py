@@ -54,6 +54,9 @@ class Process(object):
    def __str__(self):
       return self.__class__.__name__
 
+   def __cmp__(self, other):
+      return cmp(str(self), str(other))
+
    def GetConfig(self):
       return self.config
 
@@ -204,6 +207,7 @@ class Process(object):
       for proc in Process.GetAvailableProcesses():
          ret.append(proc.__name__)
 
+      ret.sort()
       return tuple(ret)
 
    @staticmethod
