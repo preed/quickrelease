@@ -1,5 +1,4 @@
 
-import errno
 import hashlib
 import os
 import re
@@ -58,12 +57,9 @@ def GetSHA1FileHash(path):
    return sha1.hexdigest()
 
 def Makedirs(path):
-   try:
-      os.makedirs(path)
-   except OSError, ex:
-      if ex.errno != errno.EEXIST:
-         raise ex
-      pass
+   if os.path.isdir(path):
+      return
+   os.makedirs(path)
 
 class ExceptionURLopener(FancyURLopener):
    def __init__(self, *args, **kwargs):
