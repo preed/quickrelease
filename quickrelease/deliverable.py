@@ -269,8 +269,8 @@ def GetAllDeliverables(deliverableDir=None):
    else:
       cacheKeys = Deliverable._gDeliverablesCache.keys()
       if len(cacheKeys) == 0:
-         raise ValueError("No deliverables found yet; prime cache with
-          FindDeliverables()" % (deliverableDir))
+         raise ValueError("No deliverables found yet; prime cache with "
+          "FindDeliverables()" % (deliverableDir))
 
       allDeliverables = []
 
