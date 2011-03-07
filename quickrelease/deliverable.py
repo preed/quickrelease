@@ -29,7 +29,7 @@ class Deliverable(object):
           "constructor")
       elif not os.path.isfile(deliverableFile):
          raise ValueError("Non-existent file passed to Deliverable constructor")
-      elif not IsDeliverableSection(config, deliverableClass):
+      elif not IsValidDeliverableClass(config, deliverableClass):
          raise ValueError("Non-existent deliverable class passed to "
           "Deliverable constructor: %s" % deliverableClass)
 
@@ -360,7 +360,11 @@ def DeliverableSectionNameFromClass(delivClass):
 def IsDeliverableSectionName(sectionName):
    return sectionName.startswith(Deliverable.DELIVERABLE_CONFIG_PREFIX)
 
-def IsDeliverableSection(config, delivClass):
-   sectionItems = config.GetSectionItems(DeliverableSectionNameFromClass(
-    delivClass))
+def IsValidDeliverableClass(config, delivClass):
+   try:
+      sectionItems = config.GetSectionItems(DeliverableSectionNameFromClass(
+       delivClass))
+   except ValueError:
+      return False
+
    return 'name' in sectionItems or 'regex' in sectionItems
