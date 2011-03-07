@@ -276,6 +276,11 @@ def GetAllDeliverables(deliverableDir=None):
 
       return tuple(Deliverable._gDeliverablesCache[deliverableDir])
    else:
+      cacheKeys = Deliverable._gDeliverablesCache.keys()
+      if len(cacheKeys) == 0:
+         raise ValueError("No deliverables found yet; prime cache with
+          FindDeliverables()" % (deliverableDir))
+
       allDeliverables = []
 
       for dDirs in Deliverable._gDeliverablesCache.keys():
@@ -316,12 +321,14 @@ def GetDeliverables(deliverableClass, deliverableDir=None):
 def GetDeliverable(deliverableClass, deliverableDir=None):
    possibleDelivs = GetDeliverables(deliverableClass, deliverableDir)
 
-   if len(possibleDelivs) > 1:
+   if len(possibleDelivs) == 0:
+      return None
+   elif len(possibleDelivs) > 1:
       raise ConfigSpecError("More than one deliverable matched for "
-       "deliverable class '%s': %s" % (deliverableClass,
+       "deliverable class %s: %s" % (deliverableClass,
        ', '.join(possibleDelivs)))
-
-   return possibleDelivs[0]
+   else:
+      return possibleDelivs[0]
 
 def FlushDeliverableCache(deliverableDir=None):
    if deliverableDir is None:
