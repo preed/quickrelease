@@ -145,7 +145,7 @@ def RunShellCommand(command=(),
                     logfile=None, appendLogfile=True,
                     errorLogfile=None, appendErrorLogfile=True,
                     combineOutput=True,
-                    printOutput=False, background=False,
+                    printOutput=None, background=False,
                     verbose=False,
                     raiseErrors=True):
 
@@ -181,6 +181,9 @@ def RunShellCommand(command=(),
 
    if dir is None:
       dir = os.getcwd()
+
+   if printOutput is None:
+      printOutput = verbose
 
    try:
       if timeout is not None:
