@@ -149,8 +149,12 @@ def RunShellCommand(command=(),
                     verbose=False,
                     raiseErrors=True):
 
-   assert len(command) > 0, "No empty commands"
-   assert background is False, "Background not implemented yet"
+   if len(command) <= 0:
+      raise ValueError("RunShellCommand(): Empty command.")
+
+   if background:
+      raise ValueError("RunShellCommand() background option not implemented "
+       "yet.")
 
    processWasKilled = False
    processTimedOut = False
