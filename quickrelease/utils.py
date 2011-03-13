@@ -181,6 +181,9 @@ def RunShellCommand(command=(),
 
    commandStr = ' '.join(execArray)
 
+   if dir is None:
+      dir = os.getcwd()
+
    try:
       if timeout is not None:
          timeout = float(timeout)
@@ -189,12 +192,12 @@ def RunShellCommand(command=(),
        % timeout)
 
    if verbose:
-      if dir != None:
-         print >> sys.stderr, ('Running command: %s in directory %s with '
-          'timeout %ss' % (commandStr, dir, timeout))
-      else:
-         print >> sys.stderr, ('Running command: %s with timeout %ss' % 
-          (commandStr, timeout))
+      timeoutStr = ""
+      if timeout is not None:
+         timeoutStr = " with timeout %d seconds" % int(timeout)
+
+      print >> sys.stderr, ("Running command [%s] in directory %s%s." %
+       (','.join(execArray), dir, timeoutStr)
 
    logHandle = None
    if logfile:
