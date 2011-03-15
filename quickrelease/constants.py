@@ -1,11 +1,14 @@
 
 QUICKRELEASE_CONSTANTS = {
+   'BZIP_PROG': 'bzip2',
    'MAKE' : 'make',
+   'MD5SUM' : 'md5sum',
    'MV' : 'mv',
    'PERL' : 'perl',
    'S3CURL' : 's3curl.pl',
    'SVN' : 'svn',
    'RSYNC' : 'rsync',
+   'TAR' : 'tar',
    'UNZIP' : 'unzip',
    'WGET' : 'wget',
    
