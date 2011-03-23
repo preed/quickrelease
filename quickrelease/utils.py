@@ -69,6 +69,9 @@ class ExceptionURLopener(FancyURLopener):
       if errcode == 403 or errcode == 404:
          raise IOError("HTTP %d error on %s" % (errcode, url))
 
+      return FancyURLopener.http_error_default(self, url, fp, errcode, errmsg,
+       headers, data)
+
 class NonBlockingPipeReader(Thread):
    def __init__(self, pipe=None,
                       logHandle=None, printOutput=False, bufferedOutput=False):
