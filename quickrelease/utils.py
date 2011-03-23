@@ -51,9 +51,11 @@ def GetSHA1FileHash(path):
       raise ValueError("GetSHA1FileHash(): invalid path: %s" % (path))
 
    sha1 = hashlib.sha1()
-   f = open(path, 'rb')
-   sha1.update(f.read())
-   f.close()
+   try:
+      f = open(path, 'rb')
+      sha1.update(f.read())
+   finally:
+      f.close()
    return sha1.hexdigest()
 
 def Makedirs(path):
