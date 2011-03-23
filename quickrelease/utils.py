@@ -138,6 +138,12 @@ class RunShellCommandError(Exception):
    def GetRunShellCommandObject(self):
       return self.runShellCmdObj
 
+def CheckRunShellCommandArg(argument):
+   argType = type(argument)
+   if argType not in (str, unicode, int, float, list, long):
+      raise TypeError("RunShellCommand(): unexpected argument type %s, index: "
+       "%d" % (argType, ndx))
+
 def RunShellCommand(command=(),
                     timeout=ConfigSpec.GetConstant(
                      'RUN_SHELL_COMMAND_DEFAULT_TIMEOUT'),
@@ -162,22 +168,17 @@ def RunShellCommand(command=(),
    # This makes it so we can pass int, longs, and other types to our
    # RunShellCommand that are easily convertable to strings, but which Popen()
    # will barf on if they're not strings.
-   #
-   # There are certain python types that have interested effects if you call
-   # str() on them, so we don't handle all Python types.
-   #
-   # TODO: handle array types correctly; that would be easy to do.
-   # Also, are we doing the right thing for StringTypes?
 
    execArray = []
-   for ndx in range(0, len(command)):
-      argType = type(command[ndx])
-      if (argType not in (types.IntType, types.FloatType, types.ListType,
-                          types.LongType, types.StringType, types.StringTypes)):
-         raise TypeError, ("RunShellCommand(): unexpected argument type %s" %
-          (argType))
+   for ndx in range(len(command)):
+      CheckRunShellCommandArg(command[ndx])
 
-      execArray.append(str(command[ndx]))
+      if type(command[ndx]) is list:
+         for lstNdx in range(len(command[ndx])):
+            CheckRunShellCommandArg(command[ndx][lstNdx])
+            execArray.append(str(command[ndx][lstNdx]))
+      else:
+         execArray.append(str(command[ndx]))
 
    if dir is None:
       dir = os.getcwd()
