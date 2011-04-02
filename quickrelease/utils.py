@@ -138,146 +138,182 @@ class RunShellCommandError(Exception):
    def GetRunShellCommandObject(self):
       return self.runShellCmdObj
 
-def CheckRunShellCommandArg(argument):
-   argType = type(argument)
-   if argType not in (str, unicode, int, float, list, long):
-      raise TypeError("RunShellCommand(): unexpected argument type %s, index: "
-       "%d" % (argType, ndx))
+class RunShellCommand(object):
+   def __init__(self,
+                command=(),
+                timeout=ConfigSpec.GetConstant(
+                 'RUN_SHELL_COMMAND_DEFAULT_TIMEOUT'),
+                workDir=None,
+                logfile=None, appendLogfile=True,
+                errorLogfile=None, appendErrorLogfile=True,
+                combineOutput=True,
+                printOutput=None, verbose=False,
+                raiseErrors=True,
+                background=False,
+                autoRun=True):
 
-def RunShellCommand(command=(),
-                    timeout=ConfigSpec.GetConstant(
-                     'RUN_SHELL_COMMAND_DEFAULT_TIMEOUT'),
-                    dir=None,
-                    logfile=None, appendLogfile=True,
-                    errorLogfile=None, appendErrorLogfile=True,
-                    combineOutput=True,
-                    printOutput=None, background=False,
-                    verbose=False,
-                    raiseErrors=True):
+      if len(command) <= 0:
+         raise ValueError("RunShellCommand: Empty command.")
 
-   if len(command) <= 0:
-      raise ValueError("RunShellCommand(): Empty command.")
+      if background:
+         raise NotImplementedError("RunShellCommand: background not "
+          "implemented yet.")
 
-   if background:
-      raise ValueError("RunShellCommand() background option not implemented "
-       "yet.")
+      self.timeout = timeout
+      self.workDir = workDir
+      self.logfile = logfile
+      self.appendLogfile= appendLogfile
+      self.errorLogfile = errorLogfile
+      self.appendErrorLogfile = appendErrorLogfile
+      self.combineOutput = combineOutput
+      self.printOutput = printOutput
+      self.verbose = verbose
+      self.raiseErrors = raiseErrors
 
-   processWasKilled = False
-   processTimedOut = False
+      self.processWasKilled = False
+      self.processTimedOut = False
+      self.stdout = None
+      self.stderr = None
+      self.startTime = None
+      self.endTime = None
+      self.returncode = None
 
-   # This makes it so we can pass int, longs, and other types to our
-   # RunShellCommand that are easily convertable to strings, but which Popen()
-   # will barf on if they're not strings.
+      # This makes it so we can pass int, longs, and other types to our
+      # RunShellCommand that are easily convertable to strings, but which 
+      # Popen() will barf on if they're not strings.
 
-   execArray = []
-   for ndx in range(len(command)):
-      CheckRunShellCommandArg(command[ndx])
+      self.execArray = []
 
-      if type(command[ndx]) is list:
-         for lstNdx in range(len(command[ndx])):
-            CheckRunShellCommandArg(command[ndx][lstNdx])
-            execArray.append(str(command[ndx][lstNdx]))
-      else:
-         execArray.append(str(command[ndx]))
+      for ndx in range(len(command)):
+         listNdx = None
+         try:
+            self._CheckRunShellCommandArg(type(command[ndx]))
 
-   if dir is None:
-      dir = os.getcwd()
+            if type(command[ndx]) is list:
+               for lstNdx in range(len(command[ndx])):
+                  self._CheckRunShellCommandArg(type(command[ndx][lstNdx]))
+                  self.execArray.append(str(command[ndx][lstNdx]))
+            else:
+               self.execArray.append(str(command[ndx]))
+         except TypeError, ex:
+            errorStr = str(ex) + ": index %s" % (ndx)
 
-   if printOutput is None:
-      printOutput = verbose
+            if listNdx is not None:
+               errorStr += ", sub index: %s" % (listNdx)
 
-   try:
-      if timeout is not None:
-         timeout = float(timeout)
-   except ValueError:
-      raise ValueError("RunShellCommand(): Invalid timeout value '%s'"
-       % timeout)
+            raise ValueError(errorStr)
 
-   if verbose:
-      timeoutStr = ""
-      if timeout is not None:
-         timeoutStr = " with timeout %d seconds" % int(timeout)
+      if self.workDir is None:
+         self.workDir = os.getcwd()
 
-      print >> sys.stderr, ("RunShellCommand(): Running [%s] in directory "
-       "%s%s." % (','.join(execArray), dir, timeoutStr)
+      if self.printOutput is None:
+         self.printOutput = self.verbose
 
-   logHandle = None
-   if logfile:
-      if appendLogfile:
-         logHandle = open(logfile, 'a')
-      else:
-         logHandle = open(logfile, 'w') 
+      try:
+         if self.timeout is not None:
+            self.timeout = float(timeout)
+      except ValueError:
+         raise ValueError("RunShellCommand(): Invalid timeout value '%s'"
+          % timeout)
 
-   if combineOutput:
-      errorLogHandle = logHandle
-   elif errorLogfile is not None:
-      if appendErrorLogfile:
-         errorLogHandle = open(errorLogfile, 'a')
-      else:
-         errorLogHandle = open(errorLogfile, 'w')
-   else:
-      errorLogHandle = None
+      if autoRun:
+         self.Run()
 
-   procStartTime = int(time.time())
-   process = Popen(execArray, stdout=PIPE, stderr=PIPE, cwd=dir)
+   def __str__(self):
+      return ' '.join(self.execArray)
 
-   stdoutReader = NonBlockingPipeReader(pipe=process.stdout,
-                                        printOutput=printOutput,
-                                        logHandle=logHandle)
+   def __int__(self):
+      return self.returncode
 
-   stderrReader = NonBlockingPipeReader(pipe=process.stderr,
-                                        printOutput=printOutput,
-                                        logHandle=errorLogHandle)
+   def Run(self):
+      if self.verbose:
+         timeoutStr = ""
+         if self.timeout is not None and gUsingKillableProcess:
+            timeoutStr = " with timeout %d seconds" % (self.timeout)
 
-   stdoutReader.start()
-   stderrReader.start()
+         print >> sys.stderr, ("RunShellCommand(): Running [%s] in directory "
+          "%s%s." % (','.join(self.execArray), self.workDir, timeoutStr))
 
-   try:
-      # If you're not using killable process, you theoretically have something
-      # else (buildbot) that's implementing a timeout for you; so, all
-      # timeouts here are ignored... ...
-      if gUsingKillableProcess:
-         process.wait(timeout)
-      else:
-         process.wait()
+      try:
+         logHandle = None
+         if self.logfile:
+            if self.appendLogfile:
+               logHandle = open(self.logfile, 'a')
+            else:
+               logHandle = open(self.logfile, 'w') 
 
-   except KeyboardInterrupt:
-      process.kill()
-      processWasKilled = True
+         if self.combineOutput:
+            errorLogHandle = logHandle
+         elif self.errorLogfile is not None:
+            if self.appendErrorLogfile:
+               errorLogHandle = open(self.errorLogfile, 'a')
+            else:
+               errorLogHandle = open(self.errorLogfile, 'w')
+         else:
+            errorLogHandle = None
 
-   procEndTime = int(time.time())
+         procStartTime = time.time()
+         process = Popen(self.execArray, stdout=PIPE, stderr=PIPE,
+          cwd=self.workDir)
 
-   stderrReader.join()
-   stdoutReader.join()
+         stdoutReader = NonBlockingPipeReader(pipe=process.stdout,
+                                              printOutput=self.printOutput,
+                                              logHandle=logHandle)
+   
+         stderrReader = NonBlockingPipeReader(pipe=process.stderr,
+                                              printOutput=self.printOutput,
+                                              logHandle=errorLogHandle)
 
-   if logfile:
-      logHandle.close()
+         stdoutReader.start()
+         stderrReader.start()
 
-   if errorLogfile and not combineOutput:
-      errorLogHandle.close()
+         try:
+            # If you're not using killable process, you theoretically have 
+            # something else (buildbot) that's implementing a timeout for you;
+            # so, all timeouts here are ignored... ...
+            if gUsingKillableProcess:
+               process.wait(self.timeout)
+            else:
+               process.wait()
 
-   procRunTime = procEndTime - procStartTime
+         except KeyboardInterrupt:
+            process.kill()
+            processWasKilled = True
 
-   # Assume if the runtime was up to/beyond the timeout, that it was killed,
-   # due to timeout.
-   if procRunTime >= timeout:
-      processWasKilled = True
-      processTimedOut = True
+      finally:
+         procEndTime = time.time()
 
-   ret = {}
+         stderrReader.join()
+         stdoutReader.join()
 
-   ret['command'] = execArray
-   ret['stdout'] = "".join(stdoutReader.GetOutput())
-   ret['stderr'] = "".join(stderrReader.GetOutput())
-   ret['startTime'] = procStartTime
-   ret['endTime'] = procEndTime
-   ret['runTime'] = procRunTime
-   ret['timeout'] = timeout
-   ret['processWasKilled'] = processWasKilled
-   ret['processTimedOut'] = processTimedOut
-   ret['exitValue'] = process.returncode
+         if self.logfile:
+            logHandle.close()
 
-   if raiseErrors and process.returncode:
-      raise RunShellCommandError(ret)
+         if self.errorLogfile and not self.combineOutput:
+            errorLogHandle.close()
+  
+         procRunTime = procEndTime - procStartTime
+   
+         # Assume if the runtime was up to/beyond the timeout, that it was 
+         # killed, due to timeout.
+         if procRunTime >= self.timeout:
+            self.processWasKilled = True
+            self.processTimedOut = True
+   
+         self.stdout = "".join(stdoutReader.GetOutput())
+         self.stderr = "".join(stderrReader.GetOutput())
+         self.startTime = procStartTime
+         self.endTime = procEndTime
+         self.returncode = process.returncode
 
-   return ret
+         if self.raiseErrors and self.returncode:
+            raise RunShellCommandError(self)
+
+   #TODO:
+   def GetRunningTime(self):
+      pass 
+
+   def _CheckRunShellCommandArg(self, argType):
+      if argType not in (str, unicode, int, float, list, long):
+         raise TypeError("RunShellCommand(): unexpected argument type %s" % 
+          (argType))
