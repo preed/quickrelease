@@ -138,37 +138,53 @@ class RunShellCommandError(Exception):
    def GetRunShellCommandObject(self):
       return self.runShellCmdObj
 
-class RunShellCommand(object):
-   def __init__(self,
-                command=(),
-                timeout=ConfigSpec.GetConstant(
-                 'RUN_SHELL_COMMAND_DEFAULT_TIMEOUT'),
-                workDir=None,
-                logfile=None, appendLogfile=True,
-                errorLogfile=None, appendErrorLogfile=True,
-                combineOutput=True,
-                printOutput=None, verbose=False,
-                raiseErrors=True,
-                background=False,
-                autoRun=True):
+# https://github.com/buildbot/buildbot/blob/master/slave/buildslave/runprocess.py
 
-      if len(command) <= 0:
+# http://twistedmatrix.com/trac/browser/tags/releases/twisted-8.2.0/twisted/internet/process.py
+
+# TODO convert this to args/kargs.
+
+RUN_SHELL_COMMAND_DEFAULT_ARGS = { 
+ 'command': (),
+ 'timeout': ConfigSpec.GetConstant('RUN_SHELL_COMMAND_DEFAULT_TIMEOUT'),
+ 'workDir': None,
+ 'logfile': None,
+ 'appendLogfile': True,
+ 'errorLogfile': None,
+ 'appendErrorLogfile': True,
+ 'combineOutput': True,
+ 'printOutput': None,
+ 'verbose': False,
+ 'raiseErrors': True,
+ 'background': False,
+ 'autoRun': True
+}
+
+class RunShellCommand(object):
+   def __init__(self, *args, **kwargs):
+      object.__init__(self, *args, **kwargs)
+
+      if len(args) > 0:
+          if len(kwargs.keys()) > 0:
+             raise ValueError("Can't mix initialization styles.")
+
+          kwargs['command'] = args
+
+      for arg in RUN_SHELL_COMMAND_DEFAULT_ARGS.keys():
+         argValue = RUN_SHELL_COMMAND_DEFAULT_ARGS[arg]
+         if kwargs.has_key(arg):
+            argValue = kwargs[arg]
+
+         setattr(self, arg, argValue)
+
+      if type(self.command) not in (list, tuple):
+         raise ValueError("RunShellCommand: command must be list/tuple.")
+      elif len(self.command) <= 0:
          raise ValueError("RunShellCommand: Empty command.")
 
-      if background:
+      if self.background:
          raise NotImplementedError("RunShellCommand: background not "
           "implemented yet.")
-
-      self.timeout = timeout
-      self.workDir = workDir
-      self.logfile = logfile
-      self.appendLogfile= appendLogfile
-      self.errorLogfile = errorLogfile
-      self.appendErrorLogfile = appendErrorLogfile
-      self.combineOutput = combineOutput
-      self.printOutput = printOutput
-      self.verbose = verbose
-      self.raiseErrors = raiseErrors
 
       self.processWasKilled = False
       self.processTimedOut = False
@@ -184,17 +200,17 @@ class RunShellCommand(object):
 
       self.execArray = []
 
-      for ndx in range(len(command)):
+      for ndx in range(len(self.command)):
          listNdx = None
          try:
-            self._CheckRunShellCommandArg(type(command[ndx]))
+            self._CheckRunShellCommandArg(type(self.command[ndx]))
 
             if type(command[ndx]) is list:
-               for lstNdx in range(len(command[ndx])):
-                  self._CheckRunShellCommandArg(type(command[ndx][lstNdx]))
-                  self.execArray.append(str(command[ndx][lstNdx]))
+               for lstNdx in range(len(self.command[ndx])):
+                  self._CheckRunShellCommandArg(type(self.command[ndx][lstNdx]))
+                  self.execArray.append(str(self.command[ndx][lstNdx]))
             else:
-               self.execArray.append(str(command[ndx]))
+               self.execArray.append(str(self.command[ndx]))
          except TypeError, ex:
             errorStr = str(ex) + ": index %s" % (ndx)
 
