@@ -68,6 +68,10 @@ def main(argv):
                 action='store_true',
                 help="Only run the Execute portion of the specified steps.")
 
+   if len(argv) == 0:
+      o.print_help(file=sys.stderr)
+      return 0
+
    (options, args) = o.parse_args()
 
    #if (options.mode is None):

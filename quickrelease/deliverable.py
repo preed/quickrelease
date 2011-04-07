@@ -273,7 +273,7 @@ def GetAllDeliverables(deliverableDir=None):
       cacheKeys = Deliverable._gDeliverablesCache.keys()
       if len(cacheKeys) == 0:
          raise ValueError("No deliverables found yet; prime cache with "
-          "FindDeliverables()" % (deliverableDir))
+          "FindDeliverables()")
 
       allDeliverables = []
 
@@ -358,7 +358,7 @@ def GetDeliverable(deliverableClass, deliverableDir=None):
    elif len(possibleDelivs) > 1:
       raise ConfigSpecError("More than one deliverable matched for "
        "deliverable class %s: %s" % (deliverableClass,
-       ', '.join(possibleDelivs)))
+       ', '.join(list(x.GetLocation() for x in possibleDelivs))))
    else:
       return possibleDelivs[0]
 

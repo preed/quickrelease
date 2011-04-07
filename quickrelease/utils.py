@@ -192,7 +192,7 @@ def RunShellCommand(command=(),
 
    try:
       if timeout is not None:
-         timeout = float(timeout)
+         timeout = int(timeout)
    except ValueError:
       raise ValueError("RunShellCommand(): Invalid timeout value '%s'"
        % timeout)
