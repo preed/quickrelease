@@ -369,7 +369,7 @@ def FlushDeliverableCache(deliverableDir=None):
       try:
          del Deliverable._gDeliverablesCache[deliverableDir]
       except KeyError:
-         raise ValueError("Deliverable directory %d not in cache" %
+         raise ValueError("Deliverable directory %s not in cache" %
           (deliverableDir))
 
 def GetDeliverableSections(config):
