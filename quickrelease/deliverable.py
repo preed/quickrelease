@@ -372,6 +372,11 @@ def FlushDeliverableCache(deliverableDir=None):
          raise ValueError("Deliverable directory %s not in cache" %
           (deliverableDir))
 
+def GetDeliverableCacheDirs():
+   ret = Deliverable._gDeliverablesCache.keys()
+   ret.sort()
+   return ret
+
 def GetDeliverableSections(config):
    retSections = []
 
