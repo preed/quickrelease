@@ -1,6 +1,7 @@
 
 import hashlib
 import os
+import platform
 import re
 from subprocess import PIPE
 import sys
@@ -215,7 +216,7 @@ def RunShellCommand(command=(),
          timeoutStr = " with timeout %d seconds" % int(timeout)
 
       print >> sys.stderr, ("RunShellCommand(): Running [%s] in directory "
-       "%s%s." % (','.join(execArray), dir, timeoutStr)
+       "%s%s." % (','.join(execArray), dir, timeoutStr))
 
    logHandle = None
    if logfile:

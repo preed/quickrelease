@@ -20,8 +20,8 @@ QUICKRELEASE_CONSTANTS = {
 
    'BUILD_PLATFORM_EXTENSIONS': { 'win32': 'exe',
                                   'mac': 'dmg',
-                                  'linux': 'tar.gz'
-                                  'linux-x64': 'tar.gz'
+                                  'linux': 'tar.gz',
+                                  'linux-x64': 'tar.gz',
                                  },
 
    # in seconds, so five minutes
