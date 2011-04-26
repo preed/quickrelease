@@ -11,16 +11,18 @@ QUICKRELEASE_CONSTANTS = {
    'TAR' : 'tar',
    'UNZIP' : 'unzip',
    'WGET' : 'wget',
-   
-   'BUILD_PLATFORMS': ('windows-i686-msvc8',
-                       'macosx-i686',
-                       'linux-i686',
-                       'linux-x86_64'),
 
-   'BUILD_PLATFORM_EXTENSIONS': { 'windows-i686-msvc8': 'exe',
-                                  'macosx-i686': 'dmg',
-                                  'linux-i686': 'tar.gz',
-                                  'linux-x86_64': 'tar.gz' },
+   'BUILD_PLATFORMS_MAP': {'Windows-i686': 'win32',
+                           'Darwin-i686': 'mac',
+                           'Linux-i686': 'linux',
+                           'Linux-x86_64': 'linux-x64',
+                          },
+
+   'BUILD_PLATFORM_EXTENSIONS': { 'win32': 'exe',
+                                  'mac': 'dmg',
+                                  'linux': 'tar.gz'
+                                  'linux-x64': 'tar.gz'
+                                 },
 
    # in seconds, so five minutes
    'RUN_SHELL_COMMAND_DEFAULT_TIMEOUT': 60 * 5,
@@ -39,6 +41,8 @@ QUICKRELEASE_CONSTANTS = {
                       'zip': 'application/zip',
                     },
 }
+
+QUICKRELEASE_CONSTANTS['BUILD_PLATFORMS'] = QUICKRELEASE_CONSTANTS['BUILD_PLATFORMS_MAP'].values()
 
 CONSTANTS_FROM_ENV_HANDLERS = {
    'BUILD_PLATFORMS': lambda val: tuple(val.split()),

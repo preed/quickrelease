@@ -58,6 +58,18 @@ def GetSHA1FileHash(path):
       f.close()
    return sha1.hexdigest()
 
+def GetBuildPlatform():
+   plat = platform.system()
+   arch = platform.machine()
+
+   keyName = "%s-%s" % (plat, arch)
+
+   try:
+      return ConfigSpec.GetConstant('BUILD_PLATFORMS_MAP')[keyName]
+   except KeyError:
+      raise ConfigSpecError("GetBuildPlatform() returned unknown platform "
+       "'%s'; define it in BUILD_PLATFORMS_MAP." % (keyName))
+
 def Makedirs(path):
    if os.path.isdir(path):
       return
