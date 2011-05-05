@@ -159,6 +159,7 @@ def main(argv):
       print >> sys.stderr, "Failed assertion: %s" % (ex)
       return -1
 
+   print >> sys.stderr, "Process %s completed successfully." % (options.process)
    return 0
 
 if __name__ == '__main__':
