@@ -162,7 +162,7 @@ RUN_SHELL_COMMAND_DEFAULT_ARGS = {
 
 class RunShellCommand(object):
    def __init__(self, *args, **kwargs):
-      object.__init__(self, *args, **kwargs)
+      object.__init__(self)
 
       if len(args) > 0:
           if len(kwargs.keys()) > 0:
