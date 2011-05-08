@@ -205,7 +205,7 @@ class RunShellCommand(object):
          try:
             self._CheckRunShellCommandArg(type(self.command[ndx]))
 
-            if type(command[ndx]) is list:
+            if type(self.command[ndx]) is list:
                for lstNdx in range(len(self.command[ndx])):
                   self._CheckRunShellCommandArg(type(self.command[ndx][lstNdx]))
                   self.execArray.append(str(self.command[ndx][lstNdx]))
@@ -227,12 +227,12 @@ class RunShellCommand(object):
 
       try:
          if self.timeout is not None:
-            self.timeout = int(timeout)
+            self.timeout = int(self.timeout)
       except ValueError:
          raise ValueError("RunShellCommand(): Invalid timeout value '%s'"
-          % timeout)
+          % self.timeout)
 
-      if autoRun:
+      if self.autoRun:
          self.Run()
 
    def __str__(self):
