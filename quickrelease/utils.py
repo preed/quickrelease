@@ -287,7 +287,7 @@ class RunShellCommand(object):
             # If you're not using killable process, you theoretically have 
             # something else (buildbot) that's implementing a timeout for you;
             # so, all timeouts here are ignored... ...
-            if gUsingKillableProcess:
+            if self.timeout is not None and gUsingKillableProcess:
                process.wait(self.timeout)
             else:
                process.wait()
