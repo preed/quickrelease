@@ -227,7 +227,7 @@ class RunShellCommand(object):
 
       try:
          if self.timeout is not None:
-            self.timeout = float(timeout)
+            self.timeout = int(timeout)
       except ValueError:
          raise ValueError("RunShellCommand(): Invalid timeout value '%s'"
           % timeout)
