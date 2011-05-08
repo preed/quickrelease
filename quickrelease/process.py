@@ -24,7 +24,7 @@ class Process(object):
    RECOGNIZED_CONSTRUCTOR_ARGS = ('config', 'executeSteps', 'verifySteps',
     'ignoreErrors')
 
-   AVAILABLE_PROCESS_LIST = None
+   _gAvailableProcessList = None
 
    def __init__(self, *args, **kwargs):
       object.__init__(self)
@@ -145,79 +145,76 @@ class Process(object):
          else:
             raise ex
 
-   # investigate load_module()/find_module()
-   @staticmethod
-   def GetAvailableProcesses():
-      if Process.AVAILABLE_PROCESS_LIST is None:
-         cwd = os.getcwd()
-         # XXX TODO: search PYTHON_PATH
-         os.chdir(PROCESS_MODULES_PATH)
-         pyFiles = glob('*.py')
-         os.chdir(cwd)
-         processModuleFiles = []
-         for f in pyFiles:
-            if f != '__init__.py':
-               processModuleFiles.append(f)
+# investigate load_module()/find_module()
+def GetAvailableProcesses():
+   if Process._gAvailableProcessList is None:
+      cwd = os.getcwd()
+      # XXX TODO: search PYTHON_PATH
+      os.chdir(PROCESS_MODULES_PATH)
+      pyFiles = glob('*.py')
+      os.chdir(cwd)
+      processModuleFiles = []
+      for f in pyFiles:
+         if f != '__init__.py':
+            processModuleFiles.append(f)
 
-         filenameToModuleName = lambda f: PROCESS_MODULES_PYTHON_PATH + '.' + os.path.splitext(f)[0]
-         moduleFiles = map(filenameToModuleName, processModuleFiles)
-         #for f in moduleFiles:
-         #   print "Found module files: " + f
+      filenameToModuleName = lambda f: PROCESS_MODULES_PYTHON_PATH + '.' + os.path.splitext(f)[0]
+      moduleFiles = map(filenameToModuleName, processModuleFiles)
+      #for f in moduleFiles:
+      #   print "Found module files: " + f
 
-         try:
-            processModules = map(__import__, moduleFiles)
-         except NameError, ex:
-            importErrorRegex = "name '(\w+)' is not defined"
-            importErrorMatch = re.match(importErrorRegex, str(ex))
-            if importErrorMatch:
-               raise ReleaseFrameworkError("%s is specified in a Process, "
-                "but not defined as a Step" % (importErrorMatch.group(1)))
-            else:
-               raise ex
+      try:
+         processModules = map(__import__, moduleFiles)
+      except NameError, ex:
+         importErrorRegex = "name '(\w+)' is not defined"
+         importErrorMatch = re.match(importErrorRegex, str(ex))
+         if importErrorMatch:
+            raise ReleaseFrameworkError("%s is specified in a Process, "
+             "but not defined as a Step" % (importErrorMatch.group(1)))
+         else:
+            raise ex
 
-         if len(processModules) <= 0:
-            return ()
+      if len(processModules) <= 0:
+         return ()
 
-         processList = []
+      processList = []
 
-         #for i in processModules:
-         #   print "pm is %s" % (str(i))
-         for attr in dir(processModules[0].processes):
-            possibleModule = getattr(processModules[0].processes, attr)
-            if inspect.ismodule(possibleModule):
-               for name in dir(possibleModule):
-                  obj = getattr(possibleModule, name)
-                  if inspect.isclass(obj):
-                     # only add modules in the right path
-                     # TODO: actually, do this as an isinstance check
-                     if ('.'.join(obj.__module__.split('.')[:-1]) ==
-                      PROCESS_MODULES_PYTHON_PATH):
-                        #print "Class found: %s, %s" % (obj.__name__, name)
-                        processList.append(obj)
+      #for i in processModules:
+      #   print "pm is %s" % (str(i))
+      for attr in dir(processModules[0].processes):
+         possibleModule = getattr(processModules[0].processes, attr)
+         if inspect.ismodule(possibleModule):
+            for name in dir(possibleModule):
+               obj = getattr(possibleModule, name)
+               if inspect.isclass(obj):
+                  # only add modules in the right path
+                  # TODO: actually, do this as an isinstance check
+                  if ('.'.join(obj.__module__.split('.')[:-1]) ==
+                   PROCESS_MODULES_PYTHON_PATH):
+                     #print "Class found: %s, %s" % (obj.__name__, name)
+                     processList.append(obj)
 
-         
-         Process.AVAILABLE_PROCESS_LIST = tuple(processList)
+      
+      Process._gAvailableProcessList = tuple(processList)
 
-      return Process.AVAILABLE_PROCESS_LIST
+   return Process._gAvailableProcessList
 
-   @staticmethod
-   def GetAvailableProcessesList():
-      ret = []
+def GetAvailableProcessesList():
+   ret = []
 
-      for proc in Process.GetAvailableProcesses():
-         ret.append(proc.__name__)
+   for proc in GetAvailableProcesses():
+      ret.append(proc.__name__)
 
-      ret.sort()
-      return tuple(ret)
+   ret.sort()
+   return tuple(ret)
 
-   @staticmethod
-   def GetProcessByName(procName=None, config=None, *args, **kwargs):
-      if procName is None:
-         return None
-
-      for proc in Process.GetAvailableProcesses():
-         if proc.__name__ == procName:
-            kwargs['config'] = config
-            return proc(*args, **kwargs)
-
+def GetProcessByName(procName=None, config=None, *args, **kwargs):
+   if procName is None:
       return None
+
+   for proc in GetAvailableProcesses():
+      if proc.__name__ == procName:
+         kwargs['config'] = config
+         return proc(*args, **kwargs)
+
+   return None

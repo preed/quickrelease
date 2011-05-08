@@ -26,7 +26,7 @@ from optparse import OptionParser
 import os
 import sys
 
-from quickrelease.process import Process
+from quickrelease.process import Process, GetAvailableProcessesList, GetProcessByName
 from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
 
@@ -81,7 +81,7 @@ def main(argv):
    if options.showList:
       try:
          if options.process:
-            process = Process.GetProcessByName(options.process)
+            process = GetProcessByName(options.process)
             if process is None:
                print >> sys.stderr, "Unknown process: %s" % (options.process)
                return -1
@@ -95,7 +95,7 @@ def main(argv):
          else:
             # Do this first, so if we have an import error, we error out
             # before printing anything
-            procs = Process.GetAvailableProcessesList()
+            procs = GetAvailableProcessesList()
 
             print "Available processes:"
             for p in procs:
@@ -139,7 +139,7 @@ def main(argv):
       # TODO exception handling
 
       try:
-         processToRun = Process.GetProcessByName(options.process,
+         processToRun = GetProcessByName(options.process,
           config=configSpec, verifySteps=not options.executeOnly,
           executeSteps=not options.verifyOnly)
 
