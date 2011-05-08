@@ -298,3 +298,11 @@ def RunShellCommand(command=(),
       raise RunShellCommandError(ret)
 
    return ret
+
+def ImportModule(moduleName):
+   module = __import__(moduleName)
+   moduleComponents = moduleName.split('.')
+   for comp in moduleComponents[1:]:
+      module = getattr(module, comp)
+
+   return module

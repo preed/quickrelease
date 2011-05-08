@@ -5,6 +5,7 @@ import re
 import types
 
 from quickrelease.config import ConfigSpecError, ConfigSpec
+from quickrelease.utils import ImportModule
 
 class Deliverable(object):
    DELIVERABLE_SECTION_PREFIX = 'deliverable'
@@ -84,12 +85,8 @@ class Deliverable(object):
 
          if attributeType == Deliverable.ATTRIB_TYPE_CALLBACK:
             try:
-               attributeHandlerModParts = attributeValue.split('.')
-               mod = __import__('.'.join(attributeHandlerModParts[:-1]))
-               for comp in attributeHandlerModParts[1:]:
-                  mod = getattr(mod, comp)
-
-               attributeHandlerDescriptor['handler'] = mod
+               attributeHandlerDescriptor['handler'] = ImportModule(
+                attributeValue)
             except NameError, ex:
                raise ConfigSpecError("Deliverable class '%s' defines an "
                 "attribute callback handler for attribute '%s', but the "
