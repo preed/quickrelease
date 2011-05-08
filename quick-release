@@ -162,5 +162,12 @@ def main(argv):
    print >> sys.stderr, "Process %s completed successfully." % (options.process)
    return 0
 
+
+if (sys.version_info[0] != 2 
+    or sys.version_info[1] <= 4):
+   print >> sys.stderr, ("quickrelease has only been tested with Python "
+    "2.5.x - 2.7.x.")
+   sys.exit(-1)
+
 if __name__ == '__main__':
    sys.exit(main(sys.argv[1:]))
