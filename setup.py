@@ -7,7 +7,7 @@ setup(
     version = "0.10.0pre",
     author = "J. Paul Reed",
     author_email = "jpreed@gmail.com",
-    description = ("A lightweight release harness[0] that aims to provide a "
+    description = ("A lightweight release harness that aims to provide a "
                    "framework and supporting infrastructure to help define a "
                    "process."),
     license = "MIT",
