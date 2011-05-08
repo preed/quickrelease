@@ -9,24 +9,24 @@ from quickrelease.step import Step
 from quickrelease.exception import ReleaseFrameworkError
 from quickrelease.utils import GetActivePartnerList, ImportModule
 
-QUICKRELEASE_NAMESPACE = 'quickrelease'
 QUICKRELEASE_PROCESSES_DIR = 'processes'
 QUICKRELEASE_STEPS_DIR = 'steps'
 
 QUICKRELEASE_MODULES_DIR = os.getenv('QUICKRELEASE_MODULES_DIR')
 if QUICKRELEASE_MODULES_DIR is None:
-   QUICKRELEASE_MODULES_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.abspath(__file__), '..')))
+   #QUICKRELEASE_MODULES_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.abspath(__file__), '..')))
+   QUICKRELEASE_MODULES_DIR = os.path.dirname(os.path.abspath(__file__))
+#else:
+#   print "Overriding default quickrelease modules dir: " + QUICKRELEASE_MODULES_DIR
 
 if not os.path.isabs(QUICKRELEASE_MODULES_DIR):
    QUICKRELEASE_MODULES_DIR = os.path.abspath(QUICKRELEASE_MODULES_DIR)
 
 for d in (QUICKRELEASE_PROCESSES_DIR, QUICKRELEASE_STEPS_DIR):
-   checkDir = os.path.join(QUICKRELEASE_MODULES_DIR, QUICKRELEASE_NAMESPACE, 
-    d)
+   checkDir = os.path.join(QUICKRELEASE_MODULES_DIR, d)
    if not os.path.isdir(checkDir):
       raise RuntimeWarning("The specified QUICKRELEASE_MODULES_DIR %s is "
-       "missing the 'quickrelease/%s' directory; bailing." % (
-       QUICKRELEASE_MODULES_DIR, d))
+       "missing the '%s' directory; bailing." % (QUICKRELEASE_MODULES_DIR, d))
 
 #print "Adding %s" % (QUICKRELEASE_MODULES_DIR)
 #sys.path.append(QUICKRELEASE_MODULES_DIR)
@@ -163,7 +163,7 @@ def GetAvailableProcesses():
       processModuleFiles = []
 
       try:
-         os.chdir(os.path.join(QUICKRELEASE_MODULES_DIR, QUICKRELEASE_NAMESPACE,
+         os.chdir(os.path.join(QUICKRELEASE_MODULES_DIR, 
           QUICKRELEASE_PROCESSES_DIR))
          processModuleFiles = glob('*.py')
       finally:
@@ -171,10 +171,12 @@ def GetAvailableProcesses():
 
       processModuleFiles.remove('__init__.py')
 
+      #print "PYTHONPATH: " + ':'.join(sys.path)
+
       if len(processModuleFiles) <= 0:
          return ()
 
-      filenameToModuleName = lambda f: '.'.join([QUICKRELEASE_NAMESPACE,
+      filenameToModuleName = lambda f: '.'.join([os.path.basename(QUICKRELEASE_MODULES_DIR),
        QUICKRELEASE_PROCESSES_DIR, os.path.splitext(f)[0]])
       moduleFiles = map(filenameToModuleName, processModuleFiles)
       processList = []
