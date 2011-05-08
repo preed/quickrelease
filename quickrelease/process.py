@@ -11,25 +11,36 @@ from quickrelease.utils import GetActivePartnerList, ImportModule
 
 QUICKRELEASE_PROCESSES_DIR = 'processes'
 QUICKRELEASE_STEPS_DIR = 'steps'
+INIT_PY = '__init__.py'
 
-QUICKRELEASE_MODULES_DIR = os.getenv('QUICKRELEASE_MODULES_DIR')
-if QUICKRELEASE_MODULES_DIR is None:
-   #QUICKRELEASE_MODULES_DIR = os.path.dirname(os.path.abspath(os.path.join(os.path.abspath(__file__), '..')))
-   QUICKRELEASE_MODULES_DIR = os.path.dirname(os.path.abspath(__file__))
-#else:
-#   print "Overriding default quickrelease modules dir: " + QUICKRELEASE_MODULES_DIR
+gProcessAndStepDefnPath = []
 
-if not os.path.isabs(QUICKRELEASE_MODULES_DIR):
-   QUICKRELEASE_MODULES_DIR = os.path.abspath(QUICKRELEASE_MODULES_DIR)
+QUICKRELEASE_DEFINITIONS_PATH = os.getenv('QUICKRELEASE_DEFINITIONS_PATH')
 
-for d in (QUICKRELEASE_PROCESSES_DIR, QUICKRELEASE_STEPS_DIR):
-   checkDir = os.path.join(QUICKRELEASE_MODULES_DIR, d)
-   if not os.path.isdir(checkDir):
-      raise RuntimeWarning("The specified QUICKRELEASE_MODULES_DIR %s is "
-       "missing the '%s' directory; bailing." % (QUICKRELEASE_MODULES_DIR, d))
+if QUICKRELEASE_DEFINITIONS_PATH is not None:
+   for path in QUICKRELEASE_DEFINITIONS_PATH.split(':'):
+      absPath = os.path.abspath(path)
+      gProcessAndStepDefnPath.append(absPath)
+      sys.path.append(os.path.dirname(absPath))
 
-#print "Adding %s" % (QUICKRELEASE_MODULES_DIR)
-#sys.path.append(QUICKRELEASE_MODULES_DIR)
+if os.getenv('QUICKRELEASE_OVERRIDE_DEFAULT_DEFINITIONS') is None:
+   gProcessAndStepDefnPath.append(os.path.dirname(os.path.abspath(__file__)))
+
+for path in gProcessAndStepDefnPath:
+   if not os.path.isfile(os.path.join(path, INIT_PY)):
+      raise RuntimeWarning("The specified directory %s in "
+       "QUICKRELEASE_DEFINITIONS_PATH is missing an __init__.py file; bailing." 
+       % (path))
+   for d in (QUICKRELEASE_PROCESSES_DIR, QUICKRELEASE_STEPS_DIR):
+      checkDir = os.path.join(path, d)
+      if not os.path.isdir(checkDir):
+         raise RuntimeWarning("The specified directory %s in "
+          "QUICKRELEASE_DEFINITIONS_PATH is missing the %s directory; "
+          "bailing." % (path, d))
+      elif not os.path.isfile(os.path.join(checkDir, INIT_PY)):
+         raise RuntimeWarning("The specified directory %s in "
+          "QUICKRELEASE_DEFINITIONS_PATH is missing an __init__.py file; "
+          "bailing." % (path, d))
 
 class Process(object):
    RECOGNIZED_CONSTRUCTOR_ARGS = ('config', 'executeSteps', 'verifySteps',
@@ -76,7 +87,7 @@ class Process(object):
          self.stepNames = []
 
          for s in self.steps:
-            assert issubclass(s.__class__, Step.__class__), ("Process steps "
+            assert issubclass(s, Step), ("Process steps "
              "must be derived from the Step class (step %s is not)" %
              (s.__name__))
             self.stepNames.append(s.__name__)
@@ -156,69 +167,80 @@ class Process(object):
          else:
             raise ex
 
-# investigate load_module()/find_module()
 def GetAvailableProcesses():
    if Process._gAvailableProcessList is None:
-      cwd = os.getcwd()
-      processModuleFiles = []
+      Process._gAvailableProcessList = []
 
-      try:
-         os.chdir(os.path.join(QUICKRELEASE_MODULES_DIR, 
-          QUICKRELEASE_PROCESSES_DIR))
-         processModuleFiles = glob('*.py')
-      finally:
-         os.chdir(cwd)
-
-      processModuleFiles.remove('__init__.py')
-
-      #print "PYTHONPATH: " + ':'.join(sys.path)
-
-      if len(processModuleFiles) <= 0:
-         return ()
-
-      filenameToModuleName = lambda f: '.'.join([os.path.basename(QUICKRELEASE_MODULES_DIR),
-       QUICKRELEASE_PROCESSES_DIR, os.path.splitext(f)[0]])
-      moduleFiles = map(filenameToModuleName, processModuleFiles)
-      processList = []
-
-      for f in moduleFiles:
-         #print "Importing: " + f
+      for path in gProcessAndStepDefnPath:
+         #print "Checking process/step definition path: %s" % (path)
+         cwd = os.getcwd()
+         processModuleFiles = []
 
          try:
-            mod = ImportModule(f)
-         except NameError, ex:
-            importErrorRegex = "name '(\w+)' is not defined"
-            importErrorMatch = re.match(importErrorRegex, str(ex))
-            if importErrorMatch:
-               raise ReleaseFrameworkError("Step %s is specified as part of "
-                "process %s, but is not defined" % (importErrorMatch.group(1), 
-                f.split('.')[-1]))
-            else:
-               raise ex
-         except SyntaxError, ex:
-            definitionType = None
-            parentDir = os.path.basename(os.path.dirname(ex.filename))
-            if parentDir == QUICKRELEASE_PROCESSES_DIR:
-               definitionType = "process"
-               processDetailStr = ""
-            elif parentDir == QUICKRELEASE_STEPS_DIR:
-               definitionType = "step"
-               processDetailStr = " (part of process %s)" % (
-                f.split('.')[-1])
+            os.chdir(os.path.join(path, QUICKRELEASE_PROCESSES_DIR))
+            processModuleFiles = glob('*.py')
+         finally:
+            os.chdir(cwd)
 
-            raise ReleaseFrameworkError("Syntax error in %s definition %s%s, "
-             "line %d:\n%s" % (definitionType, os.path.basename(ex.filename),
-             processDetailStr, ex.lineno, ex.text))
+         processModuleFiles.remove('__init__.py')
 
-         for attr in dir(mod):
-            obj = getattr(mod, attr)
-            if inspect.isclass(obj):
-               if obj.__module__ == f and issubclass(obj, Process):
-                  #print "Class found: %s" % (obj.__name__)
-                  processList.append(obj)
+         if len(processModuleFiles) <= 0:
+            continue
 
-      Process._gAvailableProcessList = tuple(processList)
+         filenameToModuleName = lambda f: '.'.join([os.path.basename(path),
+          QUICKRELEASE_PROCESSES_DIR, os.path.splitext(f)[0]])
+         moduleFiles = map(filenameToModuleName, processModuleFiles)
+         processList = []
 
+         for f in moduleFiles:
+            #print "Importing process module: " + f
+
+            try:
+               mod = ImportModule(f)
+            except NameError, ex:
+               nameErrorRegex = "name '(\w+)' is not defined"
+               nameErrorMatch = re.match(nameErrorRegex, str(ex))
+               if nameErrorMatch:
+                  raise ReleaseFrameworkError("Step %s is specified as part of "
+                   "process %s, but is not defined" % (nameErrorMatch.group(1),
+                   f.split('.')[-1]))
+               else:
+                  raise ex
+            except ImportError, ex:
+               importErrorRegex = "No module named ([\w\.]+)"
+               importErrorMatch = re.match(importErrorRegex, str(ex))
+               if importErrorMatch:
+                  raise ReleaseFrameworkError("Process %s is trying to import "
+                   "undefined module %s" % (f, importErrorMatch.group(1)))
+               else:
+                  raise ex
+            except SyntaxError, ex:
+               definitionType = None
+               parentDir = os.path.basename(os.path.dirname(ex.filename))
+               if parentDir == QUICKRELEASE_PROCESSES_DIR:
+                  definitionType = "process"
+                  processDetailStr = ""
+               elif parentDir == QUICKRELEASE_STEPS_DIR:
+                  definitionType = "step"
+                  processDetailStr = " (part of process %s)" % (
+                   f.split('.')[-1])
+   
+               raise ReleaseFrameworkError("Syntax error in %s definition %s%s,"
+                " line %d:\n%s" % (definitionType,
+                os.path.basename(ex.filename), processDetailStr, ex.lineno,
+                ex.text))
+   
+            for attr in dir(mod):
+               obj = getattr(mod, attr)
+               if inspect.isclass(obj):
+                  if obj.__module__ == f and issubclass(obj, Process):
+                     #print "Process class found: %s" % (obj.__name__)
+                     processList.append(obj)
+   
+         Process._gAvailableProcessList += processList
+
+      Process._gAvailableProcessList = tuple(Process._gAvailableProcessList)
+   
    return Process._gAvailableProcessList
 
 def GetAvailableProcessesList():
