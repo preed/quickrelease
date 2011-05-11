@@ -1,11 +1,14 @@
 class ReleaseFrameworkError(Exception):
    def __init__(self, explanation, details=None):
-      self.explanation = explanation
-      self.details = details
-      Exception.__init__(self)
+      self._explanation = explanation
+      self._details = details
+      Exception.__init__(self, explanation)
+
+   def _GetExplanation(self): return self.explanation
+   def _GetDetails(self): return self.details
+
+   explanation = property(_GetExplanation)
+   details = property(_GetDetails)
 
    def __str__(self):
       return str(self.explanation)
-
-   def GetDetails(self):
-      return self.details
