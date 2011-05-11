@@ -8,6 +8,7 @@ from threading import Thread
 import time
 import types
 from urllib import FancyURLopener
+from Queue import Queue, Empty
 
 from quickrelease.config import ConfigSpec, ConfigSpecError
 
@@ -69,39 +70,72 @@ class ExceptionURLopener(FancyURLopener):
       if errcode == 403 or errcode == 404:
          raise IOError("HTTP %d error on %s" % (errcode, url))
 
-class NonBlockingPipeReader(Thread):
-   def __init__(self, pipe=None,
-                      logHandle=None, printOutput=False, bufferedOutput=False):
+PIPE_STDOUT = 1
+PIPE_STDERR = 2
+DEFAULT_QUEUE_POLL_INTERVAL = 0.1
+
+class OutputQueueReader(Thread):
+   queueTimeout = DEFAULT_QUEUE_POLL_INTERVAL
+   collectedOutput = []
+
+   def __init__(self, queue=None,
+                      monitoredStreams=2,
+                      logHandleDescriptors=(),
+                      printOutput=False, bufferedOutput=False):
       Thread.__init__(self)
-      self.pipe = pipe
+      self.queue = queue
       self.printOutput = printOutput
       self.bufferedOutput = bufferedOutput
-      self.logHandle = logHandle
-      self.collectedOutput = []
+      self.logHandleDescriptors = logHandleDescriptors
+      self.monitoredStreams = monitoredStreams
+
+      if not self.printOutput:
+         self.queueTimeout *= 2
 
    def run(self):
-      while True: 
-         output = self.pipe.readline()
+      streamDeathCount = 0
 
-         if output == '':
-            break
+      while True:
+         try:
+            ###line = self.q.get_nowait() # or q.get(timeout=.1)
+            lineObj = self.queue.get(timeout=self.queueTimeout)
+         except Empty:
+            continue
+
+         lineContent = lineObj['content']
+
+         if lineContent is None:
+            #print "line content on type %s is none" % (lineObj['type'])
+            self.queue.task_done()
+            streamDeathCount += 1
+            assert (streamDeathCount >= 0 and streamDeathCount <= 
+             self.monitoredStreams), "Stream monitor/death count mismatch!"
+            if streamDeathCount == self.monitoredStreams:
+               break
+            else:
+               continue
 
          if self.printOutput:
             # ... but don't add a newline, since it already contains one...
-            print re.sub('\r?\n?$', '', output)
+            print re.sub('\r?\n?$', '', lineContent)
             if not self.bufferedOutput:
                sys.stdout.flush()
 
-         if self.logHandle is not None:
-            self.logHandle.write(output)
+         for h in self.logHandleDescriptors:
+            if h['handle'] is not None and h['type'] == lineObj['type']:
+               h['handle'].write(lineContent)
 
-         self.collectedOutput.append(output)
+         ## TODO: if collectedOutput is too big, dump to file
+         self.collectedOutput.append(lineObj)
 
-      if self.logHandle is not None:
-         self.logHandle.flush()
+         self.queue.task_done()
+
+      for h in self.logHandleDescriptors:
+         if h['handle'] is not None:
+            h['handle'].flush()
 
    def GetOutput(self):
-      return self.collectedOutput
+      return list(x['content'] for x in self.collectedOutput)
 
 class RunShellCommandError(Exception):
    def __init__(self, returnObj):
@@ -251,37 +285,45 @@ class RunShellCommand(object):
           "%s%s." % (','.join(self.execArray), self.workDir, timeoutStr))
 
       try:
-         logHandle = None
+         logDescs = []
+
          if self.logfile:
             if self.appendLogfile:
                logHandle = open(self.logfile, 'a')
             else:
                logHandle = open(self.logfile, 'w') 
 
+            logDescs.append({'type': PIPE_STDOUT,
+                             'handle': logHandle })
+
          if self.combineOutput:
-            errorLogHandle = logHandle
+            logDescs.append({'type': PIPE_STDERR,
+                             'handle': logHandle })
          elif self.errorLogfile is not None:
             if self.appendErrorLogfile:
                errorLogHandle = open(self.errorLogfile, 'a')
             else:
                errorLogHandle = open(self.errorLogfile, 'w')
-         else:
-            errorLogHandle = None
 
+            logDescs.append({'type': PIPE_STDERR,
+                             'handle': errorLogHandle })
+
+         outputQueue = Queue()
          procStartTime = time.time()
-         process = Popen(self.execArray, stdout=PIPE, stderr=PIPE,
-          cwd=self.workDir)
 
-         stdoutReader = NonBlockingPipeReader(pipe=process.stdout,
-                                              printOutput=self.printOutput,
-                                              logHandle=logHandle)
-   
-         stderrReader = NonBlockingPipeReader(pipe=process.stderr,
-                                              printOutput=self.printOutput,
-                                              logHandle=errorLogHandle)
+         process = Popen(self.execArray, stdout=PIPE, stderr=PIPE,
+          cwd=self.workDir, bufsize=0)
+
+         stdoutReader = Thread(target=_EnqueueOutput,
+          args=(process.stdout, outputQueue, PIPE_STDOUT))
+         stderrReader = Thread(target=_EnqueueOutput,
+          args=(process.stderr, outputQueue, PIPE_STDERR))
+         outputMonitor = OutputQueueReader(queue=outputQueue,
+          logHandleDescriptors=logDescs, printOutput=self.printOutput)
 
          stdoutReader.start()
          stderrReader.start()
+         outputMonitor.start()
 
          try:
             # If you're not using killable process, you theoretically have 
@@ -295,19 +337,21 @@ class RunShellCommand(object):
          except KeyboardInterrupt:
             process.kill()
             processWasKilled = True
-
       finally:
          procEndTime = time.time()
 
+         #print >> sys.stderr, "Joining outputMonitor"
+         outputMonitor.join()
+         #print >> sys.stderr, "Joining stderrReader"
          stderrReader.join()
+         #print >> sys.stderr, "Joining stdoutReader"
          stdoutReader.join()
+         #print >> sys.stderr, "Joining q"
+         outputQueue.join()
 
-         if self.logfile:
-            logHandle.close()
+         for h in logDescs:
+            h['handle'].close()
 
-         if self.errorLogfile and not self.combineOutput:
-            errorLogHandle.close()
-  
          procRunTime = procEndTime - procStartTime
    
          # Assume if the runtime was up to/beyond the timeout, that it was 
@@ -315,9 +359,15 @@ class RunShellCommand(object):
          if procRunTime >= self.timeout:
             self.processWasKilled = True
             self.processTimedOut = True
-   
-         self.stdout = "".join(stdoutReader.GetOutput())
-         self.stderr = "".join(stderrReader.GetOutput())
+ 
+         #for i in range(len(outputMonitor.collectedOutput)):
+         #   print "Line %d content: %s" % (i, outputMonitor.collectedOutput[i]['content'])
+         #   print "Line %d time: %s" % (i, outputMonitor.collectedOutput[i]['time'])
+
+
+         self.stdout = "".join(outputMonitor.GetOutput())
+         # TODO: THIS IS WRONG
+         self.stderr = "".join(outputMonitor.GetOutput())
          self.startTime = procStartTime
          self.endTime = procEndTime
          self.returncode = process.returncode
@@ -333,3 +383,17 @@ class RunShellCommand(object):
       if argType not in (str, unicode, int, float, list, long):
          raise TypeError("RunShellCommand(): unexpected argument type %s" % 
           (argType))
+
+def _EnqueueOutput(outputPipe, outputQueue, pipeType):
+   for line in iter(outputPipe.readline, ''):
+      assert line is not None, "Line was None"
+      outputLine = { 'type': pipeType,
+       'time': time.time(),
+       'content': line }
+      outputQueue.put(outputLine)
+
+   outputPipe.close()
+   outputLine = { 'type': pipeType,
+    'time': time.time(),
+    'content': None }
+   outputQueue.put(outputLine)
