@@ -177,34 +177,6 @@ RUN_SHELL_COMMAND_DEFAULT_ARGS = {
 }
 
 class RunShellCommand(object):
-   def _GetCommand(self): return self._command
-   def _GetStdout(self): return self._stdout
-   def _GetStderr(self): return self._stderr
-   def _GetStartTime(self): return self._startTime
-   def _GetEndTime(self): return self._endTime
-   def _GetReturnCode(self): return self._returncode
-   def _GetProcessKilled(self): return self._processWasKilled
-   def _GetProcessTimedOut(self): return self._processTimedOut
-   def _GetWorkDir(self): return self._workdir
-   def _GetTimeout(self): return self._timeout
-
-   def _GetRunningTime(self):
-      if self._startTime is None or self._endTime is None:
-         return None
-      return self._endTime - self._startTime
-
-   command = property(_GetCommand)
-   stdout = property(_GetStdout)
-   stderr = property(_GetStderr)
-   runningtime = property(_GetRunningTime)
-   starttime = property(_GetStartTime)
-   endtime = property(_GetEndTime)
-   returncode = property(_GetReturnCode)
-   processkilled = property(_GetProcessKilled)
-   processtimedout = property(_GetProcessTimedOut)
-   workdir = property(_GetWorkDir)
-   timeout = property(_GetTimeout)
-
    def __init__(self, *args, **kwargs):
       object.__init__(self)
 
@@ -212,7 +184,7 @@ class RunShellCommand(object):
           if len(kwargs.keys()) > 0:
              raise ValueError("Can't mix initialization styles.")
 
-          kwargs['_command'] = args
+          kwargs['command'] = args
 
       for arg in RUN_SHELL_COMMAND_DEFAULT_ARGS.keys():
          argValue = RUN_SHELL_COMMAND_DEFAULT_ARGS[arg]
@@ -253,8 +225,8 @@ class RunShellCommand(object):
             else:
                commandPart = str(self._command[ndx])
 
-            if ',' in commandPart:
-               self._str_separator = '|'
+            if DEFAULT__STR__SEPARATOR in commandPart:
+               self.__str__separator = '|'
 
             self._execArray.append(commandPart)
 
@@ -286,9 +258,48 @@ class RunShellCommand(object):
       if self._autoRun:
          self.Run()
 
-   _str_separator = ','
+   def _GetCommand(self): return self._command
+   def _GetStdout(self): return self._stdout
+   def _GetStderr(self): return self._stderr
+   def _GetStartTime(self): return self._startTime
+   def _GetEndTime(self): return self._endTime
+   def _GetReturnCode(self): return self._returncode
+   def _GetProcessKilled(self): return self._processWasKilled
+   def _GetProcessTimedOut(self): return self._processTimedOut
+   def _GetWorkDir(self): return self._workdir
+   def _GetTimeout(self): return self._timeout
+
+   def _GetRunningTime(self):
+      if self._startTime is None or self._endTime is None:
+         return None
+      return self._endTime - self._startTime
+
+   command = property(_GetCommand)
+   stdout = property(_GetStdout)
+   stderr = property(_GetStderr)
+   runningtime = property(_GetRunningTime)
+   starttime = property(_GetStartTime)
+   endtime = property(_GetEndTime)
+   returncode = property(_GetReturnCode)
+   processkilled = property(_GetProcessKilled)
+   processtimedout = property(_GetProcessTimedOut)
+   workdir = property(_GetWorkDir)
+   timeout = property(_GetTimeout)
+
+   DEFAULT__STR__SEPARATOR = ','
+   __str__separator = DEFAULT__STR__SEPARATOR
+   __str__decorate = True
+
    def __str__(self):
-      return "[" + self._str_separator.join(self._execArray) + "]"
+      strRep = self.__str__separator.join(self._execArray)
+      if self.__str__decorate:
+         return "[" + strRep + "]"
+      else:
+         return strRep
+
+   def SetStrOpts(self, separtor=DEFAULT__STR_SEPARATOR, decorate=True):
+      self.__str__separator = separator
+      self.__str__decorate = decorate 
 
    def __int__(self):
       return self.returncode
@@ -401,10 +412,10 @@ def _CheckRunShellCommandArg(argType):
 
 class _OutputLineDesc(object):
    def __init__(self, outputType=None, content=None):
+      self.time = time.time()
       object.__init__(self)
       self.type = outputType
       self.content = content
-      self.time = time.time()
 
 class _LogHandleDesc(object):
    def __init__(self, handle, outputType=None):
