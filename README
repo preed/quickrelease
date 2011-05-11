@@ -55,11 +55,6 @@ TODOs
 The following are considered deficiencies in quick-release and are at the
 top of the list to fix.
 
-* Both the RunShellCommand function and its associated RunShellCommandError
-  class need to be refactored. They mostly work, however they do have some
-  unimplemented edges, inconsistencies, and some of the output buffering
-  from commands can be inconsistent.
-
 * Better logging handling; currently, implementors of steps are mostly 
   responsible for their own logging, usually through printing to sys.stderr 
   and hoping the person running the script is capturing the output with
