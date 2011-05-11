@@ -100,10 +100,8 @@ def ImportModule(moduleName):
 
 PIPE_STDOUT = 1
 PIPE_STDERR = 2
-DEFAULT_QUEUE_POLL_INTERVAL = 0.1
 
 class _OutputQueueReader(Thread):
-   queueTimeout = DEFAULT_QUEUE_POLL_INTERVAL
    def __init__(self, queue=None,
                       monitoredStreams=2,
                       logHandleDescriptors=(),
@@ -115,9 +113,6 @@ class _OutputQueueReader(Thread):
       self.logHandleDescriptors = logHandleDescriptors
       self.monitoredStreams = monitoredStreams
 
-      if not self.printOutput:
-         self.queueTimeout *= 2
-
       self.collectedOutput = {}
 
       self.collectedOutput[PIPE_STDOUT] = []
@@ -128,8 +123,7 @@ class _OutputQueueReader(Thread):
 
       while True:
          try:
-            ###line = self.q.get_nowait() # or q.get(timeout=.1)
-            lineDesc = self.queue.get(timeout=self.queueTimeout)
+            lineDesc = self.queue.get()
          except Empty:
             continue
 
@@ -251,7 +245,7 @@ class RunShellCommand(object):
             else:
                commandPart = str(self._command[ndx])
 
-            if DEFAULT__STR__SEPARATOR in commandPart:
+            if self.DEFAULT__STR__SEPARATOR in commandPart:
                self.__str__separator = '|'
 
             self._execArray.append(commandPart)
@@ -323,7 +317,7 @@ class RunShellCommand(object):
       else:
          return strRep
 
-   def SetStrOpts(self, separtor=DEFAULT__STR_SEPARATOR, decorate=True):
+   def SetStrOpts(self, separator=DEFAULT__STR__SEPARATOR, decorate=True):
       self.__str__separator = separator
       self.__str__decorate = decorate 
 
@@ -401,12 +395,12 @@ class RunShellCommand(object):
          if commandLaunched:
             procEndTime = time.time()
 
-            #print >> sys.stderr, "Joining outputMonitor"
-            outputMonitor.join()
             #print >> sys.stderr, "Joining stderrReader"
             stderrReader.join()
             #print >> sys.stderr, "Joining stdoutReader"
             stdoutReader.join()
+            #print >> sys.stderr, "Joining outputMonitor"
+            outputMonitor.join()
             #print >> sys.stderr, "Joining q"
             outputQueue.join()
 
