@@ -98,13 +98,11 @@ class OutputQueueReader(Thread):
       while True:
          try:
             ###line = self.q.get_nowait() # or q.get(timeout=.1)
-            lineObj = self.queue.get(timeout=self.queueTimeout)
+            lineDesc = self.queue.get(timeout=self.queueTimeout)
          except Empty:
             continue
 
-         lineContent = lineObj['content']
-
-         if lineContent is None:
+         if lineDesc.content is None:
             #print "line content on type %s is none" % (lineObj['type'])
             self.queue.task_done()
             streamDeathCount += 1
@@ -117,25 +115,25 @@ class OutputQueueReader(Thread):
 
          if self.printOutput:
             # ... but don't add a newline, since it already contains one...
-            print re.sub('\r?\n?$', '', lineContent)
+            print re.sub('\r?\n?$', '', lineDesc.content)
             if not self.bufferedOutput:
                sys.stdout.flush()
 
          for h in self.logHandleDescriptors:
-            if h['handle'] is not None and h['type'] == lineObj['type']:
-               h['handle'].write(lineContent)
+            if h.handle is not None and h.type == lineDesc.type:
+               h.handle.write(lineDesc.content)
 
          ## TODO: if collectedOutput is too big, dump to file
-         self.collectedOutput.append(lineObj)
+         self.collectedOutput.append(lineDesc)
 
          self.queue.task_done()
 
       for h in self.logHandleDescriptors:
-         if h['handle'] is not None:
-            h['handle'].flush()
+         if h.handle is not None:
+            h.handle.flush()
 
    def GetOutput(self):
-      return list(x['content'] for x in self.collectedOutput)
+      return list(x.content for x in self.collectedOutput)
 
 class RunShellCommandError(Exception):
    def __init__(self, returnObj):
@@ -293,20 +291,17 @@ class RunShellCommand(object):
             else:
                logHandle = open(self.logfile, 'w') 
 
-            logDescs.append({'type': PIPE_STDOUT,
-                             'handle': logHandle })
+            logDescs.append(_LogHandleDesc(logHandle, PIPE_STDOUT))
 
          if self.combineOutput:
-            logDescs.append({'type': PIPE_STDERR,
-                             'handle': logHandle })
+            logDescs.append(_LogHandleDesc(logHandle, PIPE_STDERR))
          elif self.errorLogfile is not None:
             if self.appendErrorLogfile:
                errorLogHandle = open(self.errorLogfile, 'a')
             else:
                errorLogHandle = open(self.errorLogfile, 'w')
 
-            logDescs.append({'type': PIPE_STDERR,
-                             'handle': errorLogHandle })
+            logDescs.append(_LogHandleDesc(errorLogHandle, PIPE_STDERR))
 
          outputQueue = Queue()
          procStartTime = time.time()
@@ -350,7 +345,7 @@ class RunShellCommand(object):
          outputQueue.join()
 
          for h in logDescs:
-            h['handle'].close()
+            h.handle.close()
 
          procRunTime = procEndTime - procStartTime
    
@@ -384,16 +379,23 @@ class RunShellCommand(object):
          raise TypeError("RunShellCommand(): unexpected argument type %s" % 
           (argType))
 
+class _OutputLineDesc(object):
+   def __init__(self, outputType=None, content=None):
+      object.__init__(self)
+      self.type = outputType
+      self.content = content
+      self.time = time.time()
+
+class _LogHandleDesc(object):
+   def __init__(self, handle, outputType=None):
+      object.__init__(self)
+      self.type = outputType
+      self.handle = handle
+
 def _EnqueueOutput(outputPipe, outputQueue, pipeType):
    for line in iter(outputPipe.readline, ''):
       assert line is not None, "Line was None"
-      outputLine = { 'type': pipeType,
-       'time': time.time(),
-       'content': line }
-      outputQueue.put(outputLine)
+      outputQueue.put(_OutputLineDesc(pipeType, line))
 
    outputPipe.close()
-   outputLine = { 'type': pipeType,
-    'time': time.time(),
-    'content': None }
-   outputQueue.put(outputLine)
+   outputQueue.put(_OutputLineDesc(pipeType))
