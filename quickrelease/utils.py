@@ -179,17 +179,10 @@ class RunShellCommandError(Exception):
    def GetRunShellCommandObject(self):
       return self.runShellCmdObj
 
-# https://github.com/buildbot/buildbot/blob/master/slave/buildslave/runprocess.py
-
-# http://twistedmatrix.com/trac/browser/tags/releases/twisted-8.2.0/twisted/internet/process.py
-
-# TODO convert this to args/kargs.
-
 RUN_SHELL_COMMAND_DEFAULT_ARGS = { 
  'appendLogfile': True,
  'appendErrorLogfile': True,
  'autoRun': True,
- 'background': False,
  'command': (),
  'combineOutput': True,
  'errorLogfile': None,
@@ -250,10 +243,6 @@ class RunShellCommand(object):
          raise ValueError("RunShellCommand: command must be list/tuple.")
       elif len(self._command) <= 0:
          raise ValueError("RunShellCommand: Empty command.")
-
-      if self._background:
-         raise NotImplementedError("RunShellCommand: background not "
-          "implemented yet.")
 
       self._processWasKilled = False
       self._processTimedOut = False
