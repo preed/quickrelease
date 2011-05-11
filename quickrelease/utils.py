@@ -144,40 +144,22 @@ class _OutputQueueReader(Thread):
 
       return list(x.content for x in self.collectedOutput[outputType])
 
-class RunShellCommandError(Exception):
-   def __init__(self, returnObj):
-      self.runShellCmdObj = returnObj
-      Exception.__init__(self)
+class RunShellCommandError(ReleaseFrameworkError):
+   def __init__(self, rscObj):
+      if rscObj.processtimedout:
+         explanation = "RunShellCommand(): command %s timed out." % (rcsObj)
+      elif rscObj.processkilled:
+         explanation = ("RunShellCommand(): command %s killed; exit value: %d"
+          % (rcsOobj, rcsObj.returncode))
+      else:
+         explanation = ("RunShellCommand(): command %s failed; exit value: %d, "
+          "partial stderr: %s" % (rcsObj, rcsObj.returncode,
+          ' '.join((re.split('[\r\n]+', rscObj.stderr()))[-5:])))
 
-   def __str__(self):
-      if (self.runShellCmdObj['processTimedOut']):
-         return ("RunShellCommand(): command '%s' timed out; exit value: %d"
-          % (self.GetCommandString(), self.GetExitValue()))
-      elif (self.runShellCmdObj['processWasKilled']):
-         return ("RunShellCommand(): command '%s' was killed; exit value: %d"
-          % (self.GetCommandString(), self.GetExitValue()))
+      ReleaseFrameworkError.__init__(explanation, rscObj)
 
-      return ("RunShellCommand(): command '%s' failed; exit value: %d, "
-       "partial stderr: %s" % (self.GetCommandString(), self.GetExitValue(),
-       ' '.join((re.split('[\r\n]+', self.GetStderr()))[-5:])))
-
-   def GetCommand(self):
-      return self.runShellCmdObj['command']
-
-   def GetCommandString(self):
-      return ' '.join(self.runShellCmdObj['command'])
-
-   def GetExitValue(self):
-      return self.runShellCmdObj['exitValue']
-
-   def GetStdout(self):
-      return self.runShellCmdObj['stdout']
-
-   def GetStderr(self):
-      return self.runShellCmdObj['stderr']
-
-   def GetRunShellCommandObject(self):
-      return self.runShellCmdObj
+   def _GetCommandObj(self): return self.details
+   command = property(_GetCommandObj)
 
 RUN_SHELL_COMMAND_DEFAULT_ARGS = { 
  'appendLogfile': True,
@@ -404,8 +386,8 @@ class RunShellCommand(object):
             #   print "Line %d content: %s" % (i, outputMonitor.collectedOutput[i]['content'])
             #   print "Line %d time: %s" % (i, outputMonitor.collectedOutput[i]['time'])
 
-            self._stdout = "".join(outputMonitor.GetOutput(PIPE_STDOUT))
-            self._stderr = "".join(outputMonitor.GetOutput(PIPE_STDERR))
+            self._stdout = outputMonitor.GetOutput(PIPE_STDOUT)
+            self._stderr = outputMonitor.GetOutput(PIPE_STDERR)
             self._endTime = procEndTime
             self._returncode = process.returncode
 
