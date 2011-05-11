@@ -1,0 +1,4 @@
+include README
+include COPYING
+recursive-include examples
+recursive-include quickrelease 
