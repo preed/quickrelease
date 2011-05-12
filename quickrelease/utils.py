@@ -165,16 +165,19 @@ class _OutputQueueReader(Thread):
       return list(x.content for x in self.collectedOutput[outputType])
 
 class RunShellCommandError(ReleaseFrameworkError):
+   STDERR_DISPLAY_CONTEXT = 5
+
    def __init__(self, rscObj):
       if rscObj.processtimedout:
-         explanation = "RunShellCommand(): command %s timed out." % (rcsObj)
+         explanation = "RunShellCommand(): command %s timed out." % (rscObj)
       elif rscObj.processkilled:
          explanation = ("RunShellCommand(): command %s killed; exit value: %d"
-          % (rcsOobj, rcsObj.returncode))
+          % (rcsOobj, rscObj.returncode))
       else:
          explanation = ("RunShellCommand(): command %s failed; exit value: %d, "
-          "partial stderr: %s" % (rcsObj, rcsObj.returncode,
-          ' '.join((re.split('[\r\n]+', rscObj.stderr()))[-5:])))
+          "partial stderr: %s" % (rscObj, rscObj.returncode,
+           re.sub('[\r\n]+', '', ' '.join(rscObj.stderr[
+           -self.STDERR_DISPLAY_CONTEXT:]))))
 
       ReleaseFrameworkError.__init__(explanation, rscObj)
 
