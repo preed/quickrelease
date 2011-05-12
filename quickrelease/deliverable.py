@@ -262,7 +262,7 @@ def FindDeliverables(deliverableDir, config):
 def GetAllDeliverables(deliverableDir=None):
    if deliverableDir is not None:
       if not Deliverable._gDeliverablesCache.has_key(deliverableDir):
-         raise ValueError("Directory %d has not been scanned for deliverables "
+         raise ValueError("Directory %s has not been scanned for deliverables "
           "yet; use FindDeliverables()" % (deliverableDir))
 
       return tuple(Deliverable._gDeliverablesCache[deliverableDir])
@@ -366,7 +366,7 @@ def FlushDeliverableCache(deliverableDir=None):
       try:
          del Deliverable._gDeliverablesCache[deliverableDir]
       except KeyError:
-         raise ValueError("Deliverable directory %d not in cache" %
+         raise ValueError("Deliverable directory %s not in cache" %
           (deliverableDir))
 
 def GetDeliverableSections(config):
