@@ -345,9 +345,10 @@ class RunShellCommand(object):
 
             logDescs.append(_LogHandleDesc(logHandle, PIPE_STDOUT))
 
-         if self._combineOutput:
-            logDescs.append(_LogHandleDesc(logHandle, PIPE_STDERR))
-         elif self._errorLogfile is not None:
+            if self._combineOutput:
+               logDescs.append(_LogHandleDesc(logHandle, PIPE_STDERR))
+
+         if not self._combineOutput and self._errorLogfile is not None:
             if self._appendErrorLogfile:
                errorLogHandle = open(self._errorLogfile, 'a')
             else:
