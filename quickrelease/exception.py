@@ -4,8 +4,8 @@ class ReleaseFrameworkError(Exception):
       self._details = details
       Exception.__init__(self, explanation)
 
-   def _GetExplanation(self): return self.explanation
-   def _GetDetails(self): return self.details
+   def _GetExplanation(self): return self._explanation
+   def _GetDetails(self): return self._details
 
    explanation = property(_GetExplanation)
    details = property(_GetDetails)
