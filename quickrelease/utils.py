@@ -8,7 +8,6 @@ from subprocess import PIPE
 import sys
 from threading import Thread
 import time
-import types
 from urllib import FancyURLopener
 from Queue import Queue, Empty
 
@@ -172,7 +171,7 @@ class RunShellCommandError(ReleaseFrameworkError):
          explanation = "RunShellCommand(): command %s timed out." % (rscObj)
       elif rscObj.processkilled:
          explanation = ("RunShellCommand(): command %s killed; exit value: %d"
-          % (rcsOobj, rscObj.returncode))
+          % (rscObj, rscObj.returncode))
       else:
          explanation = ("RunShellCommand(): command %s failed; exit value: %d, "
           "partial stderr: %s" % (rscObj, rscObj.returncode,
