@@ -68,7 +68,7 @@ def main():
                 action='store_true',
                 help="Only run the Execute portion of the specified steps.")
 
-   if len(argv) == 0:
+   if len(sys.argv[1:]) == 0:
       o.print_help(file=sys.stderr)
       return 0
 
