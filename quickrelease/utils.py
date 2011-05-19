@@ -100,7 +100,10 @@ def ImportModule(moduleName):
 PIPE_STDOUT = 1
 PIPE_STDERR = 2
 
-REMOVE_LINE_ENDING = lambda x: re.sub(os.linesep + '$', '', x)
+# We used to use os.linesep here, but it turns out that doesn't work on
+# MSYS, where the Win32 tools output os.linesep, but the ported Unix tools 
+# only output \n
+REMOVE_LINE_ENDING = lambda x: re.sub('\r?\n?$', '', x)
 
 class _OutputQueueReader(Thread):
    def __init__(self, queue=None,
