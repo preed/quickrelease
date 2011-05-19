@@ -100,6 +100,8 @@ def ImportModule(moduleName):
 PIPE_STDOUT = 1
 PIPE_STDERR = 2
 
+REMOVE_LINE_ENDING = lambda x: re.sub(os.linesep + '$', '', x)
+
 class _OutputQueueReader(Thread):
    def __init__(self, queue=None,
                       monitoredStreams=2,
@@ -138,8 +140,7 @@ class _OutputQueueReader(Thread):
                continue
 
          if self.printOutput:
-            # ... but don't add a newline, since it already contains one...
-            print re.sub('\r?\n?$', '', lineDesc.content)
+            print REMOVE_LINE_ENDING(lineDesc.content)
             if not self.bufferedOutput:
                sys.stdout.flush()
 
@@ -161,7 +162,8 @@ class _OutputQueueReader(Thread):
          raise ValueError("No output type %s processed by this output monitor" %
           (outputType))
 
-      return list(x.content for x in self.collectedOutput[outputType])
+      return list(REMOVE_LINE_ENDING(x.content) for x in
+       self.collectedOutput[outputType])
 
 class RunShellCommandError(ReleaseFrameworkError):
    STDERR_DISPLAY_CONTEXT = 5
@@ -197,6 +199,12 @@ RUN_SHELL_COMMAND_DEFAULT_ARGS = {
  'verbose': False,
  'workdir': None,
 }
+
+# RunShellCommand may seem a bit weird, but that's because it was originally a
+# function, and later converted to a class.
+
+# TODO: output (both stdout/stderr together), rawstdout, and rawstderr
+# properties
 
 class RunShellCommand(object):
    def __init__(self, *args, **kwargs):
