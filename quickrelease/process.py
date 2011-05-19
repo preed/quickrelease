@@ -18,7 +18,7 @@ gProcessAndStepDefnPath = []
 QUICKRELEASE_DEFINITIONS_PATH = os.getenv('QUICKRELEASE_DEFINITIONS_PATH')
 
 if QUICKRELEASE_DEFINITIONS_PATH is not None:
-   for path in QUICKRELEASE_DEFINITIONS_PATH.split(':'):
+   for path in QUICKRELEASE_DEFINITIONS_PATH.split(os.path.pathsep):
       absPath = os.path.abspath(path)
       gProcessAndStepDefnPath.append(absPath)
       sys.path.append(os.path.dirname(absPath))
@@ -207,7 +207,7 @@ def GetAvailableProcesses():
                else:
                   raise ex
             except ImportError, ex:
-               importErrorRegex = "No module named ([\w\.]+)"
+               importErrorRegex = "No module named (.+)"
                importErrorMatch = re.match(importErrorRegex, str(ex))
                if importErrorMatch:
                   raise ReleaseFrameworkError("Process %s is trying to import "
