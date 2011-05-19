@@ -335,6 +335,9 @@ class RunShellCommand(object):
          print >> sys.stderr, ("RunShellCommand(): Running %s in directory "
           "%s%s." % (str(self), self.workdir, timeoutStr))
 
+         sys.stderr.flush()
+         sys.stdout.flush()
+
       commandLaunched = False
       try:
          logDescs = []
