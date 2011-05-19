@@ -172,18 +172,18 @@ class RunShellCommandError(ReleaseFrameworkError):
    STDERR_DISPLAY_CONTEXT = 5
 
    def __init__(self, rscObj):
+      explanation = "RunShellCommand(): "
       if rscObj.processtimedout:
-         explanation = "RunShellCommand(): command %s timed out." % (rscObj)
+         explanation += "command %s timed out." % (rscObj)
       elif rscObj.processkilled:
-         explanation = ("RunShellCommand(): command %s killed; exit value: %d"
-          % (rscObj, rscObj.returncode))
+         explanation += "command %s killed; exit value: %d" % (rscObj,
+          rscObj.returncode)
       else:
-         explanation = ("RunShellCommand(): command %s failed; exit value: %d, "
-          "partial stderr: %s" % (rscObj, rscObj.returncode,
-           re.sub('[\r\n]+', '', ' '.join(rscObj.stderr[
-           -self.STDERR_DISPLAY_CONTEXT:]))))
+         explanation += ("command %s failed; exit value: %d, partial stderr: %s"
+          % (rscObj, rscObj.returncode, ' '.join(rscObj.stderr[
+          -self.STDERR_DISPLAY_CONTEXT:])))
 
-      ReleaseFrameworkError.__init__(explanation, rscObj)
+      ReleaseFrameworkError.__init__(self, explanation, rscObj)
 
    def _GetCommandObj(self): return self.details
    command = property(_GetCommandObj)
