@@ -110,6 +110,10 @@ class Deliverable(object):
                raise ConfigSpecError("Deliverable class '%s' defines invalid "
                 "filter attribute '%s'" % (deliverableClass, fa))
 
+   def __rep__(self):
+      return "<class %s: %s (%s)>" % (self.__class__, self.GetName(),
+       self.GetLocation())
+
    def __str__(self):
       return self.GetLocation()
 
