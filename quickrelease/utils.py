@@ -207,7 +207,8 @@ RUN_SHELL_COMMAND_DEFAULT_ARGS = {
 # function, and later converted to a class.
 
 # TODO: output (both stdout/stderr together), rawstdout, and rawstderr
-# properties
+# properties; change "partial stderr" message in RunShellCommandError to use
+# new "output" property
 
 class RunShellCommand(object):
    def __init__(self, *args, **kwargs):
@@ -346,6 +347,8 @@ class RunShellCommand(object):
          print >> sys.stderr, ("RunShellCommand(): Running %s in directory "
           "%s%s." % (str(self), self.workdir, timeoutStr))
 
+         # Make sure all the output streams are flushed before we start; this
+         # really only ever caused a problem on Win32
          sys.stderr.flush()
          sys.stdout.flush()
 
