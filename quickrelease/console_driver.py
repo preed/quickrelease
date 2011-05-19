@@ -34,7 +34,7 @@ QUICK_RELEASE_VERSION = '0.10.0pre'
 
 gRootDir = None
 
-def main(argv):
+def main():
    global gRootDir
 
    o = OptionParser(usage="%s [ -l [-p] | "
@@ -170,4 +170,4 @@ if (sys.version_info[0] != 2
    sys.exit(-1)
 
 if __name__ == '__main__':
-   sys.exit(main(sys.argv[1:]))
+   sys.exit(main())
