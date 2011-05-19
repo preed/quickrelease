@@ -29,8 +29,8 @@ if os.getenv('QUICKRELEASE_OVERRIDE_DEFAULT_DEFINITIONS') is None:
 for path in gProcessAndStepDefnPath:
    if not os.path.isfile(os.path.join(path, INIT_PY)):
       raise RuntimeWarning("The specified directory %s in "
-       "QUICKRELEASE_DEFINITIONS_PATH is missing an __init__.py file; bailing." 
-       % (path))
+       "QUICKRELEASE_DEFINITIONS_PATH is missing an __init__.py file; "
+       "please add one." % (path))
    for d in (QUICKRELEASE_PROCESSES_DIR, QUICKRELEASE_STEPS_DIR):
       checkDir = os.path.join(path, d)
       if not os.path.isdir(checkDir):
@@ -40,7 +40,7 @@ for path in gProcessAndStepDefnPath:
       elif not os.path.isfile(os.path.join(checkDir, INIT_PY)):
          raise RuntimeWarning("The specified directory %s in "
           "QUICKRELEASE_DEFINITIONS_PATH is missing an __init__.py file; "
-          "bailing." % (path, d))
+          "please add one." % (path, d))
 
 class Process(object):
    RECOGNIZED_CONSTRUCTOR_ARGS = ('config', 'executeSteps', 'verifySteps',
