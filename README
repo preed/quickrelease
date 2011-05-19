@@ -17,49 +17,64 @@ Its design goals are to be:
   it works.
 
 It's especially useful for developing processes that may be driven by your
-continuous integration system; use quick-release to develop the process and 
+continuous integration system; use quickrelease to develop the process and 
 steps anywhere, with low setup-costs for engineers, and have your CI system 
-call quick-release when you're ready.
+call quickrelease when you're ready.
 
 Installation
 ------------
 
-Installation is currently manual, but relatively simple:
+Like most good Python citizens, quickrelease uses setuptools; installation
+should consist of:
 
-The python executable is quick-release, and the quickrelease diretory must
-be added to the PYTHONHOME. It is currently expected that quick-release
-will live next to this directory.
+python setup.py build
+python setup.py install
 
-To get up and running, there is a TestProcess and TestSteps in the examples
-directory; copy TestProcess.py into the quickrelease/processes directory and
-copy TestSteps.py into the quickrelease/steps directory.
+To get you up and running, there is a TestProcess and TestSteps in the 
+examples directory.
 
-You can then run the following to see if it worked:
+You can use them in two ways:
 
-./quickrelease -l
-./quickrelease -l -p TestProcess
+1. Copy TestProcess.py into the quickrelease/processes directory and
+copy TestSteps.py into the quickrelease/steps directory, under your local
+python site-packages directory, if you have permissions to do so.
+
+2. Perform the following steps:
+   a. Create a directory with a name of your choosing
+   b. Under it, create two directories named "processes" and "steps"
+   c. Create a file called "__init__.py" (no quotes) in each the processes
+      and steps directories.
+   d. Copy TestProcess.py into the processes directory
+   e. Copy TestSteps.py into the steps directory
+   f. Set the QUICKRELEASE_DEFINITIONS_PATH environment variable, pointing
+      to the directory you created in step 2a.
+
+You should then then be able to run the following to see if it worked:
+
+quickrelease -l
+quickrelease -l -p TestProcess
 
 If you'd like to try it out, run:
 
-./quickrelease -c examples/sample.cfg -p TestProcess
+quickrelease -c examples/sample.cfg -p TestProcess
 
 Then, start modifying TestProcess.py and TestStep.py to fit your needs. 
 
 QuickRelease is smart enough to find any new processes and steps that you 
 put into these directories, and offer them to you, as long as they're 
-derived from the Process and Step classes.
+derived from quickrelease's Process and Step classes.
 
 TODOs
 -----
 
-The following are considered deficiencies in quick-release and are at the
+The following are considered deficiencies in quickrelease and are at the
 top of the list to fix.
 
 * Better logging handling; currently, implementors of steps are mostly 
   responsible for their own logging, usually through printing to sys.stderr 
   and hoping the person running the script is capturing the output with
   shell redirects or /usr/bin/tee. This should provided for the user by
-  quick-release.
+  quickrelease.
 
 * Ditto the concept of "partners" (or, really, any set of process steps 
   that needs to be repeated during a single run of the process, with 
