@@ -269,7 +269,10 @@ class RunShellCommand(object):
       if self._verbose:
          timeoutStr = ""
          if self.timeout is not None and gUsingKillableProcess:
-            timeoutStr = " with timeout %d seconds" % (self.timeout)
+            secondsStr = "seconds"
+            if timeout == 1:
+               secondsStr = "second"
+            timeoutStr = " with timeout %d %s" % (self.timeout, secondsStr)
 
          print >> sys.stderr, ("RunShellCommand(): Running %s in directory "
           "%s%s." % (str(self), self.workdir, timeoutStr))
