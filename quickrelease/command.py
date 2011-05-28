@@ -335,7 +335,7 @@ class RunShellCommand(object):
       except OSError, ex:
          if ex.errno == errno.ENOENT:
             raise ReleaseFrameworkError("Invalid command or working dir")
-         raise ex
+         raise ReleaseFrameworkError("OSError: %s" % str(ex), details=ex)
       #except Exception, ex:
       #   print "EX: %s" % (ex)
       finally:
