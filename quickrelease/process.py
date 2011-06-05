@@ -99,7 +99,9 @@ class Process(object):
         for s in self.steps:
             stepInstance = s(process=self)
             assert isinstance(stepInstance, Step), ("Process steps must be "
-             "derived from the Step class (step %s is not)" % (str(stepInstance)))
+             "derived from the Step class (step %s is not)" % (
+             str(stepInstance)))
+
             steps.append(stepInstance)
 
         return tuple(steps)
@@ -201,17 +203,18 @@ def GetAvailableProcesses():
                     nameErrorRegex = "name '(\w+)' is not defined"
                     nameErrorMatch = re.match(nameErrorRegex, str(ex))
                     if nameErrorMatch:
-                        raise ReleaseFrameworkError("Step %s is specified as part of "
-                         "process %s, but is not defined" % (nameErrorMatch.group(1),
-                         f.split('.')[-1]))
+                        raise ReleaseFrameworkError("Step %s is specified as "
+                         "part of process %s, but is not defined" %
+                         (nameErrorMatch.group(1), f.split('.')[-1]))
                     else:
                         raise ex
                 except ImportError, ex:
                     importErrorRegex = "No module named (.+)"
                     importErrorMatch = re.match(importErrorRegex, str(ex))
                     if importErrorMatch:
-                        raise ReleaseFrameworkError("Process %s is trying to import "
-                         "undefined module %s" % (f, importErrorMatch.group(1)))
+                        raise ReleaseFrameworkError("Process %s is trying to "
+                         "import undefined module %s" % (f,
+                         importErrorMatch.group(1)))
                     else:
                         raise ex
                 except SyntaxError, ex:
@@ -225,8 +228,8 @@ def GetAvailableProcesses():
                         processDetailStr = " (part of process %s)" % (
                          f.split('.')[-1])
     
-                    raise ReleaseFrameworkError("Syntax error in %s definition %s%s,"
-                     " line %d:\n%s" % (definitionType,
+                    raise ReleaseFrameworkError("Syntax error in %s "
+                     "definition %s%s, line %d:\n%s" % (definitionType,
                      os.path.basename(ex.filename), processDetailStr, ex.lineno,
                      ex.text))
     

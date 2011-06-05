@@ -117,9 +117,9 @@ class ConfigSpec:
 
     def PartnerGet(self, partner, name, coercion=None, interpolation=()):
         return self.SectionGet(self._GetPartnerSectionName(partner),
-                                      name,
-                                      coercion,
-                                      interpolation)
+                               name,
+                               coercion,
+                               interpolation)
 
     def SectionGet(self, section, name, coercion=None, interpOverrides=()):
         origSection = self.GetSection()

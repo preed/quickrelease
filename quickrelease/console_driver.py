@@ -49,8 +49,8 @@ def main():
                      "Required.")
     o.add_option('-i', '--ignore-errors', dest='ignoreErrors', default=False,
                      action='store_true',
-                     help="Ignore any errors encountered while running; continue "
-                      "on with the next steps")
+                     help="Ignore any errors encountered while running; "
+                      "continue on with the next steps")
     o.add_option('-l', '--list', dest='showList', default=False,
                      action='store_true',
                      help="List all available processes or, if with -p, "
@@ -66,7 +66,8 @@ def main():
                      help="Only run the Verify portion of the specified steps.")
     o.add_option('-X', '--execute-only', dest='executeOnly', default=False,
                      action='store_true',
-                     help="Only run the Execute portion of the specified steps.")
+                     help="Only run the Execute portion of the specified "
+                      "steps.")
 
     if len(sys.argv[1:]) == 0:
         o.print_help(file=sys.stderr)
@@ -83,7 +84,8 @@ def main():
             if options.process:
                 process = GetProcessByName(options.process)
                 if process is None:
-                    print >> sys.stderr, "Unknown process: %s" % (options.process)
+                    print >> sys.stderr, "Unknown process: %s" % (
+                     options.process)
                     return -1
 
                 processStepNames = process.GetProcessStepNames()
@@ -159,12 +161,13 @@ def main():
         print >> sys.stderr, "Failed assertion: %s" % (ex)
         return -1
 
-    print >> sys.stderr, "Process %s completed successfully." % (options.process)
+    print >> sys.stderr, "Process %s completed successfully." % (
+     options.process)
     return 0
 
 
 if (sys.version_info[0] != 2 
-     or sys.version_info[1] <= 4):
+ or sys.version_info[1] <= 4):
     print >> sys.stderr, ("quickrelease has only been tested with Python "
      "2.5.x - 2.7.x.")
     sys.exit(-1)

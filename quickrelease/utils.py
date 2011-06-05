@@ -162,8 +162,8 @@ class _OutputQueueReader(Thread):
 
     def GetOutput(self, outputType=PIPE_STDOUT):
         if not self.collectedOutput.has_key(outputType):
-            raise ValueError("No output type %s processed by this output monitor" %
-             (outputType))
+            raise ValueError("No output type %s processed by this output "
+             "monitor" % (outputType))
 
         return list(REMOVE_LINE_ENDING(x.content) for x in
          self.collectedOutput[outputType])
@@ -179,9 +179,9 @@ class RunShellCommandError(ReleaseFrameworkError):
             explanation += "command %s killed; exit value: %d" % (rscObj,
              rscObj.returncode)
         else:
-            explanation += ("command %s failed; exit value: %d, partial stderr: %s"
-             % (rscObj, rscObj.returncode, ' '.join(rscObj.stderr[
-             -self.STDERR_DISPLAY_CONTEXT:])))
+            explanation += ("command %s failed; exit value: %d, "
+             "partial stderr: %s" % (rscObj, rscObj.returncode, 
+             ' '.join(rscObj.stderr[-self.STDERR_DISPLAY_CONTEXT:])))
 
         ReleaseFrameworkError.__init__(self, explanation, rscObj)
 
@@ -254,7 +254,8 @@ class RunShellCommand(object):
 
                 if type(self._command[ndx]) is list:
                     for lstNdx in range(len(self._command[ndx])):
-                        _CheckRunShellCommandArg(type(self._command[ndx][lstNdx]))
+                        _CheckRunShellCommandArg(type(
+                         self._command[ndx][lstNdx]))
                         commandPart = str(self._command[ndx][lstNdx])
                 else:
                     commandPart = str(self._command[ndx])
@@ -395,8 +396,8 @@ class RunShellCommand(object):
 
             try:
                 # If you're not using killable process, you theoretically have 
-                # something else (buildbot) that's implementing a timeout for you;
-                # so, all timeouts here are ignored... ...
+                # something else (buildbot) that's implementing a timeout for
+                # you; so, all timeouts here are ignored... ...
                 if self.timeout is not None and gUsingKillableProcess:
                     process.wait(self.timeout)
                 else:
@@ -427,8 +428,8 @@ class RunShellCommand(object):
                 for h in logDescs:
                     h.handle.close()
 
-                # Assume if the runtime was up to/beyond the timeout, that it was 
-                # killed, due to timeout.
+                # Assume if the runtime was up to/beyond the timeout, that it
+                # was killed, due to timeout.
                 if commandLaunched and self.runningtime >= self.timeout:
                     self._processWasKilled = True
                     self._processTimedOut = True

@@ -23,7 +23,8 @@ class TestStepTwo(Step):
 
     def Execute(self):
         print "Execute TestStepTwo."
-        print "    Release version still: %s" % (self.GetConfig().Get('version'))
+        print "    Release version still: %s" % (
+         self.GetConfig().Get('version'))
 
     def Verify(self):
         print "Verify TestStepTwo."
@@ -39,4 +40,5 @@ class TestStepThree(Step):
 
     def Verify(self):
         print "Verify TestStepThree."
-        print "    Verifying version still: %s" % (self.GetConfig().Get('version'))
+        print "    Verifying version still: %s" % (
+         self.GetConfig().Get('version'))

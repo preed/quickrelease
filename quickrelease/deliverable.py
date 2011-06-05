@@ -29,7 +29,8 @@ class Deliverable(object):
             raise ValueError("Must provide absolute path to Deliverable "
              "constructor")
         elif not os.path.isfile(deliverableFile):
-            raise ValueError("Non-existent file passed to Deliverable constructor")
+            raise ValueError("Non-existent file passed to Deliverable "
+             "constructor")
         elif not IsValidDeliverableClass(config, deliverableClass):
             raise ValueError("Non-existent deliverable class passed to "
              "Deliverable constructor: %s" % deliverableClass)
@@ -56,8 +57,8 @@ class Deliverable(object):
              (deliverableClass))
 
         if 'attributes' in deliverableSectionItems:
-            self.attributes = config.SectionGet(self.configSection, 'attributes',
-             list)
+            self.attributes = config.SectionGet(self.configSection, 
+             'attributes', list)
 
         for attr in self.attributes:
             attributeValue = None
@@ -96,7 +97,8 @@ class Deliverable(object):
              attributeType == Deliverable.ATTRIB_TYPE_VALUE):
                 attributeHandlerDescriptor['handler'] = attributeValue
             else:
-                assert False, "Unknown attribute handler type: %s" % (attributeType)
+                assert False, "Unknown attribute handler type: %s" % (
+                 attributeType)
 
             self.attributeHandlers[attr] = attributeHandlerDescriptor
 
@@ -107,8 +109,8 @@ class Deliverable(object):
         if self.filterAttributes is not None:
             for fa in self.filterAttributes:
                 if fa not in self.attributes:
-                    raise ConfigSpecError("Deliverable class '%s' defines invalid "
-                     "filter attribute '%s'" % (deliverableClass, fa))
+                    raise ConfigSpecError("Deliverable class '%s' defines "
+                     "invalid filter attribute '%s'" % (deliverableClass, fa))
 
     def __rep__(self):
         return "<class %s: %s (%s)>" % (self.__class__, self.GetName(),
@@ -148,8 +150,8 @@ class Deliverable(object):
         if handlerType == Deliverable.ATTRIB_TYPE_VALUE:
             return self.attributeHandlers[attribute]['handler']
         elif handlerType == Deliverable.ATTRIB_TYPE_REGEX:
-            attribMatch = re.search(self.attributeHandlers[attribute]['handler'],
-             self.GetFileName())
+            attribMatch = re.search(
+             self.attributeHandlers[attribute]['handler'], self.GetFileName())
 
             if attribMatch is None:
                 return None
@@ -175,8 +177,8 @@ def FindDeliverables(deliverableDir, config):
 
     ignoreUndefinedDeliverables = True 
     try:
-        ignoreUndefinedDeliverables = config.Get('ignore_undefined_deliverables',
-         bool)
+        ignoreUndefinedDeliverables = config.Get(
+         'ignore_undefined_deliverables', bool)
     except ConfigSpecError, ex:
         if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
             raise ex
@@ -200,7 +202,8 @@ def FindDeliverables(deliverableDir, config):
                     delivRegex = config.SectionGet(section, 'regex').strip()
                     matchType = 'regex'
                 else:
-                    raise ConfigSpecError(Deliverable.ERROR_STR_NEED_NAME_OR_REGEX %
+                    raise ConfigSpecError(
+                     Deliverable.ERROR_STR_NEED_NAME_OR_REGEX %
                      DeliverableClassFromSectionName(section))
 
                 #print "f is %s, name is %s, regex is %s" % (f, delivName, delivRegex)             
@@ -212,9 +215,9 @@ def FindDeliverables(deliverableDir, config):
                         'subclass').strip()
 
                     delivClassDescription = { 'type': matchType,
-                                                      'subclass' : subclassType,
-                                                      'class' : DeliverableClassFromSectionName(section),
-                                                      'file' : os.path.join(root, f),
+                                              'subclass' : subclassType,
+                                              'class' : DeliverableClassFromSectionName(section),
+                                              'file' : os.path.join(root, f),
                     }
 
 
@@ -251,8 +254,8 @@ def FindDeliverables(deliverableDir, config):
                 matchedClassList = []
                 fileLoc = deliverableDescList[0]['file']
                 for delivDesc in deliverableDescList:
-                    assert fileLoc == delivDesc['file'], ("Deliverable file name "
-                     "mismatch (%s vs %s)?" % (fileLoc, delivDesc['file']))
+                    assert fileLoc == delivDesc['file'], ("Deliverable file "
+                     "name mismatch (%s vs %s)?" % (fileLoc, delivDesc['file']))
 
                     matchedClassList.append("%s (matched via %s)" % (
                      delivDesc['class'], delivDesc['type']))
@@ -266,8 +269,8 @@ def FindDeliverables(deliverableDir, config):
 def GetAllDeliverables(deliverableDir=None):
     if deliverableDir is not None:
         if not Deliverable._gDeliverablesCache.has_key(deliverableDir):
-            raise ValueError("Directory %s has not been scanned for deliverables "
-             "yet; use FindDeliverables()" % (deliverableDir))
+            raise ValueError("Directory %s has not been scanned for "
+             "deliverables yet; use FindDeliverables()" % (deliverableDir))
 
         return tuple(Deliverable._gDeliverablesCache[deliverableDir])
     else:
@@ -335,10 +338,12 @@ def GetDeliverables(deliverableClass, deliverableDir=None):
 
                 raise ValueError("GetDeliverables passed extra filter '%s' "
                  "for deliverable %s; %s defines %d filter%s: %s." % (
-                 ':'.join(filterArgs[filterNdx:]), deliv.GetName(), deliv.GetName(),
-                 filterCount, pluralFilters, availableFiltersStr))
+                 ':'.join(filterArgs[filterNdx:]), deliv.GetName(),
+                 deliv.GetName(), filterCount, pluralFilters,
+                 availableFiltersStr))
 
-            if deliv.GetAttribute(dynamicFilters[dynNdx]) != filterArgs[filterNdx]:
+            if (deliv.GetAttribute(dynamicFilters[dynNdx]) != 
+             filterArgs[filterNdx]):
                 skipThisDeliv = True
                 break
 

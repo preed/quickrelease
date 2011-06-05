@@ -54,7 +54,8 @@ class Step(object):
             if partner is None:
                 return
             else:
-                assert False, "Cannot set an active partner for non-partner steps"
+                assert False, ("Cannot set an active partner for non-partner "
+                 "steps")
 
         assert partner in GetActivePartnerList(self.GetConfig()), ("Unknown "
          " partner '%s'" % (partner))

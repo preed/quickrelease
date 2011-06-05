@@ -12,17 +12,17 @@ QUICKRELEASE_CONSTANTS = {
     'UNZIP' : 'unzip',
     'WGET' : 'wget',
 
-    'BUILD_PLATFORMS_MAP': {'Windows-i686': 'win32',
-                                    'Darwin-i686': 'mac',
-                                    'Linux-i686': 'linux',
-                                    'Linux-x86_64': 'linux-x64',
-                                  },
+    'BUILD_PLATFORMS_MAP': { 'Windows-i686': 'win32',
+                             'Darwin-i686': 'mac',
+                             'Linux-i686': 'linux',
+                             'Linux-x86_64': 'linux-x64',
+                           },
 
     'BUILD_PLATFORM_EXTENSIONS': { 'win32': 'exe',
-                                             'mac': 'dmg',
-                                             'linux': 'tar.gz',
-                                             'linux-x64': 'tar.gz',
-                                            },
+                                   'mac': 'dmg',
+                                   'linux': 'tar.gz',
+                                   'linux-x64': 'tar.gz',
+                                 },
 
     # in seconds, so five minutes
     'RUN_SHELL_COMMAND_DEFAULT_TIMEOUT': 60 * 5,
@@ -31,15 +31,15 @@ QUICKRELEASE_CONSTANTS = {
     'S3_PUSH_TIMEOUT': 60 * 10,
 
     'S3_MIME_TYPES': { 'asc' : 'text/plain',
-                             'bz2' : 'application/x-bzip2',
-                             'dmg' : 'application/x-apple-diskimage',
-                             'exe' : 'application/octet-stream',
-                             'mar' : 'application/octet-stream',
-                             'md5' : 'text/plain',
-                             'tar.gz' : 'application/x-gzip',
-                             'txt': 'text/plain',
-                             'zip': 'application/zip',
-                          },
+                       'bz2' : 'application/x-bzip2',
+                       'dmg' : 'application/x-apple-diskimage',
+                       'exe' : 'application/octet-stream',
+                       'mar' : 'application/octet-stream',
+                       'md5' : 'text/plain',
+                       'tar.gz' : 'application/x-gzip',
+                       'txt': 'text/plain',
+                       'zip': 'application/zip',
+                     },
 }
 
 QUICKRELEASE_CONSTANTS['BUILD_PLATFORMS'] = QUICKRELEASE_CONSTANTS['BUILD_PLATFORMS_MAP'].values()
