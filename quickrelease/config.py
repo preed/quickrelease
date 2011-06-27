@@ -77,15 +77,21 @@ class ConfigSpec:
    def GetSection(self):
       return self.currentSection
 
-   def GetSectionItems(self, sectionName):
+   def GetSectionItems(self, sectionName=None):
+      if sectionName is None:
+         sectionName = self.currentSection
+
       try:
          return list(x[0] for x in self.GetRawConfig().items(sectionName))
       except ConfigParser.Error, ex:
          raise self._ConvertToConfigParserError(ex)
 
-   def GetAll(self):
+   def GetAll(self, sectionName=None):
+      if sectionName is None:
+         sectionName = self.currentSection
+
       try:
-         return self.GetRawConfig().items(self.currentSection)
+         return self.GetRawConfig().items(sectionName)
       except ConfigParser.Error, ex:
          raise self._ConvertToConfigParserError(ex)
 
