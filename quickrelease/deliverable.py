@@ -85,8 +85,11 @@ class Deliverable(object):
 
          if attributeType == Deliverable.ATTRIB_TYPE_CALLBACK:
             try:
-               attributeHandlerDescriptor['handler'] = ImportModule(
-                attributeValue)
+               modParts = attributeValue.split('.')
+               modFile = '.'.join(modParts[:-1])
+               handlerMod = ImportModule(modFile)
+               handlerFunction = getattr(handlerMod, modParts[-1])
+               attributeHandlerDescriptor['handler'] = handlerFunction
             except NameError, ex:
                raise ConfigSpecError("Deliverable class '%s' defines an "
                 "attribute callback handler for attribute '%s', but the "
