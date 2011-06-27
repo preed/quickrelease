@@ -11,6 +11,7 @@ class ConfigSpecError(ReleaseFrameworkError):
    INTERPOLATION_SYNTAX_ERROR = 2
    COERCION_TYPE_ERROR = 3
    NO_SECTION_ERROR = 4
+   PARSE_ERROR = 5
 
    def __init__(self, errorStr, details=None):
       ReleaseFrameworkError.__init__(self, errorStr, details)
@@ -56,8 +57,8 @@ class ConfigSpec:
 
       try:
          self.configSpec.read(configFile)
-      except ConfigParser.ParsingError, ex:
-         raise ConfigSpecError(str(ex))
+      except ConfigParser.Error, ex:
+         raise self._ConvertToConfigParserError(ex)
 
       if section != ConfigSpec.DEFAULT_STARTING_SECTION:
          if self.GetSection() not in self.GetSectionList():
@@ -80,7 +81,13 @@ class ConfigSpec:
       try:
          return list(x[0] for x in self.GetRawConfig().items(sectionName))
       except ConfigParser.Error, ex:
-         raise self._HandleConfigParserError(ex)
+         raise self._ConvertToConfigParserError(ex)
+
+   def GetAll(self):
+      try:
+         return self.GetRawConfig().items(self.currentSection)
+      except ConfigParser.Error, ex:
+         raise self._ConvertToConfigParserError(ex)
 
    def GetDefaultSection(self):
       return self.defaultSection
@@ -168,21 +175,24 @@ class ConfigSpec:
          raise ConfigSpecError("Invalid coercion type specified: %s" %
           (coercion), ConfigSpecError.COERCION_TYPE_ERROR)
       except ConfigParser.Error, ex:
-         raise self._HandleConfigParserError(ex)
+         raise self._ConvertToConfigParserError(ex)
 
-   def _HandleConfigParserError(ex):
-      if ex is ConfigParser.NoSectionError:
-         return ConfigSpecError(ex.message, ConfigSpecError.NO_SECTION_ERROR)
-      elif ex is ConfigParser.NoOptionError:
-         return ConfigSpecError(ex.message, ConfigSpecError.NO_OPTION_ERROR)
-      elif ex is ConfigParser.InterpolationMissingOptionError:
-         return ConfigSpecError(ex.message,
-          ConfigSpecError.INTERPOLATION_MISSING_OPTION_ERROR)
-      elif ex except ConfigParser.InterpolationSyntaxError:
-         return ConfigSpecError(ex.message,
-          ConfigSpecError.INTERPOLATION_SYNTAX_ERROR)
-      else
-         return ex
+   def _ConvertToConfigParserError(self, err):
+      errType = type(err)
+      errCode = None
 
-   def GetAll(self):
-      return self.configSpec.items(self.currentSection)
+      if errType is ConfigParser.NoSectionError:
+         errCode = ConfigSpecError.NO_SECTION_ERROR
+      elif errType is ConfigParser.NoOptionError:
+         errCode = ConfigSpecError.NO_OPTION_ERROR
+      elif errType is ConfigParser.InterpolationMissingOptionError:
+         errCode = ConfigSpecError.INTERPOLATION_MISSING_OPTION_ERROR
+      elif errType is ConfigParser.InterpolationSyntaxError:
+         errCode = ConfigSpecError.INTERPOLATION_SYNTAX_ERROR
+      elif errType is ConfigParser.ParseError:
+         errCode = ConfigSpecError.PARSE_ERROR
+
+      if errCode is None:
+         return err
+      else:
+         return ConfigSpecError(err.message, errCode)
