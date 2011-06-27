@@ -107,6 +107,18 @@ class Deliverable(object):
          elif (attributeType == Deliverable.ATTRIB_TYPE_REGEX or
           attributeType == Deliverable.ATTRIB_TYPE_VALUE):
             attributeHandlerDescriptor['handler'] = attributeValue
+
+            # Hacky
+            if attributeType == Deliverable.ATTRIB_TYPE_REGEX:
+               regexFlags = 0
+               try:
+                  regexFlagsStr = config.SectionGet(self.configSection,
+                   'regexflags').strip()
+                  regexFlags = eval(regexFlagsStr) 
+               except ConfigSpecError:
+                  pass
+
+               attributeHandlerDescriptor['regexFlags'] = regexFlags
          else:
             assert False, "Unknown attribute handler type: %s" % (attributeType)
 
@@ -161,7 +173,7 @@ class Deliverable(object):
          return self.attributeHandlers[attribute]['handler']
       elif handlerType == Deliverable.ATTRIB_TYPE_REGEX:
          attribMatch = re.search(self.attributeHandlers[attribute]['handler'],
-          self.GetFileName())
+          self.GetFileName(), self.attributeHandlers[attribute]['regexFlags'])
 
          if attribMatch is None:
             return None
@@ -205,19 +217,27 @@ def FindDeliverables(deliverableDir, config):
 
             sectionItems = config.GetSectionItems(section)
 
+            regexFlags = 0
             if 'name' in sectionItems:
                delivName = config.SectionGet(section, 'name').strip()
                matchType = 'name'
             elif 'regex' in sectionItems:
                delivRegex = config.SectionGet(section, 'regex').strip()
                matchType = 'regex'
+               try:
+                  regexFlagsStr = config.SectionGet(section,
+                   'regexflags').strip()
+                  regexFlags = eval(regexFlagsStr)
+               except ConfigSpecError:
+                  pass
+
             else:
                raise ConfigSpecError(Deliverable.ERROR_STR_NEED_NAME_OR_REGEX %
                 DeliverableClassFromSectionName(section))
 
             #print "f is %s, name is %s, regex is %s" % (f, delivName, delivRegex)          
             if ((delivName is not None and f == delivName) or 
-             (delivRegex is not None and re.search(delivRegex, f))):
+             (delivRegex is not None and re.search(delivRegex, f, regexFlags))):
 
                if 'subclass' in sectionItems:
                  subclassType = config.SectionGet(section,
