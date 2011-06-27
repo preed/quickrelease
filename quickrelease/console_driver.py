@@ -37,13 +37,13 @@ gRootDir = None
 def main():
    global gRootDir
 
-   o = OptionParser(usage="%s [ -l [-p] | "
+   o = OptionParser(usage="%s [ -l [-p ProcessName ] | "
     "-c config.cfg -p ProcessName [options] ]" % (sys.argv[0]),
     version="%prog version " + QUICK_RELEASE_VERSION)
    o.add_option('-1', '--onestep', dest='runOneStep', default=False,
                 action='store_true',
                 help="Run only a single step of the specified process; "
-                "useful with --start.")
+                "useful with --start-at.")
    o.add_option('-c', '--config', dest='configSpecFile', default=None,
                 help="Harness configuration specification file to use. "
                 "Required.")

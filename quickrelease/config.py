@@ -10,6 +10,7 @@ class ConfigSpecError(ReleaseFrameworkError):
    INTERPOLATION_MISSING_OPTION_ERROR = 1
    INTERPOLATION_SYNTAX_ERROR = 2
    COERCION_TYPE_ERROR = 3
+   NO_SECTION_ERROR = 4
 
    def __init__(self, errorStr, details=None):
       ReleaseFrameworkError.__init__(self, errorStr, details)
@@ -78,8 +79,8 @@ class ConfigSpec:
    def GetSectionItems(self, sectionName):
       try:
          return list(x[0] for x in self.GetRawConfig().items(sectionName))
-      except ConfigParser.NoSectionError:
-         raise ValueError("No config section '%s'" % sectionName)
+      except ConfigParser.Error, ex:
+         raise self._HandleConfigParserError(ex)
 
    def GetDefaultSection(self):
       return self.defaultSection
@@ -166,16 +167,22 @@ class ConfigSpec:
 
          raise ConfigSpecError("Invalid coercion type specified: %s" %
           (coercion), ConfigSpecError.COERCION_TYPE_ERROR)
-      except ConfigParser.NoOptionError, ex:
-         raise ConfigSpecError("Undefined config variable '%s' requested "
-          "from section %s" % (name, self.currentSection),
-          ConfigSpecError.NO_OPTION_ERROR)
-      except ConfigParser.InterpolationMissingOptionError, ex:
-         raise ConfigSpecError(str(ex),
+      except ConfigParser.Error, ex:
+         raise self._HandleConfigParserError(ex)
+
+   def _HandleConfigParserError(ex):
+      if ex is ConfigParser.NoSectionError:
+         return ConfigSpecError(ex.message, ConfigSpecError.NO_SECTION_ERROR)
+      elif ex is ConfigParser.NoOptionError:
+         return ConfigSpecError(ex.message, ConfigSpecError.NO_OPTION_ERROR)
+      elif ex is ConfigParser.InterpolationMissingOptionError:
+         return ConfigSpecError(ex.message,
           ConfigSpecError.INTERPOLATION_MISSING_OPTION_ERROR)
-      except ConfigParser.InterpolationSyntaxError, ex:
-         raise ConfigSpecError(str(ex),
+      elif ex except ConfigParser.InterpolationSyntaxError:
+         return ConfigSpecError(ex.message,
           ConfigSpecError.INTERPOLATION_SYNTAX_ERROR)
+      else
+         return ex
 
    def GetAll(self):
       return self.configSpec.items(self.currentSection)
