@@ -103,6 +103,9 @@ def main():
       except ReleaseFrameworkError, ex:
          print >> sys.stderr, "Release Framework Exception: " + str(ex)
          return -1
+      except KeyboardInterrupt:
+         print >> sys.stderr, "Interrupted."
+         return 0
       except AssertionError, ex:
          print >> sys.stderr, "Failed assertion: %s" % (ex)
          return -1
