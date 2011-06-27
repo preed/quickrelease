@@ -21,6 +21,8 @@ class Deliverable(object):
    ATTRIB_TYPE_REGEX = 1
    ATTRIB_TYPE_VALUE = 2
 
+   ATTRIB_CALLBACK_CACHE = {}
+
    def __init__(self, deliverableFile, deliverableClass, config, *args,
     **kwargs):
       object.__init__(self, *args, **kwargs)
@@ -84,17 +86,24 @@ class Deliverable(object):
          attributeHandlerDescriptor['type'] = attributeType
 
          if attributeType == Deliverable.ATTRIB_TYPE_CALLBACK:
-            try:
-               modParts = attributeValue.split('.')
-               modFile = '.'.join(modParts[:-1])
-               handlerMod = ImportModule(modFile)
-               handlerFunction = getattr(handlerMod, modParts[-1])
-               attributeHandlerDescriptor['handler'] = handlerFunction
-            except NameError, ex:
-               raise ConfigSpecError("Deliverable class '%s' defines an "
-                "attribute callback handler for attribute '%s', but the "
-                "callback is undefined: %s" % (self.deliverableClass, attr,
-                str(ex)))
+            if Deliverable.ATTRIB_CALLBACK_CACHE.has_key(attributeValue):
+               attributeHandlerDescriptor['handler'] = (
+                Deliverable.ATTRIB_CALLBACK_CACHE[attributeValue])
+            else:
+               try:
+                  modParts = attributeValue.split('.')
+                  modFile = '.'.join(modParts[:-1])
+                  handlerMod = ImportModule(modFile)
+                  handlerFunction = getattr(handlerMod, modParts[-1])
+                  attributeHandlerDescriptor['handler'] = handlerFunction
+                  Deliverable.ATTRIB_CALLBACK_CACHE[attributeValue] = (
+                   handlerFunction)
+               except NameError, ex:
+                  raise ConfigSpecError("Deliverable class '%s' defines an "
+                   "attribute callback handler for attribute '%s', but the "
+                   "callback is undefined: %s" % (self.deliverableClass, attr,
+                   str(ex)))
+
          elif (attributeType == Deliverable.ATTRIB_TYPE_REGEX or
           attributeType == Deliverable.ATTRIB_TYPE_VALUE):
             attributeHandlerDescriptor['handler'] = attributeValue
