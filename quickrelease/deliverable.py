@@ -37,6 +37,7 @@ class Deliverable(object):
 
       self.configSection = DeliverableSectionNameFromClass(deliverableClass)
       self.deliverableClass = deliverableClass
+      self.queriedDeliverableClass = None
       self.file = deliverableFile
       self.regex = None
       self.name = None
@@ -142,6 +143,9 @@ class Deliverable(object):
 
    def GetName(self):
       return self.deliverableClass
+
+   def GetQueriedName(self):
+      return self.queriedDeliverableClass
 
    def GetLocation(self):
       return self.file
@@ -340,7 +344,9 @@ def GetDeliverables(deliverableClass, deliverableDir=None):
 
       # If we've parsed all of the filter arguments, we're done
       if filterNdx == filterArgsLen:
-         filteredDeliverableList.append(deliv)
+         retDeliv = copy.deepcopy(deliv)
+         retDeliv.queriedDeliverableClass = deliverableClass
+         filteredDeliverableList.append(retDeliv)
          continue
 
       dynamicFilters = deliv.GetFilterAttributes()
@@ -378,7 +384,9 @@ def GetDeliverables(deliverableClass, deliverableDir=None):
       if skipThisDeliv:
          continue
 
-      filteredDeliverableList.append(deliv)
+      retDeliv = copy.deepcopy(deliv)
+      retDeliv.queriedDeliverableClass = deliverableClass
+      filteredDeliverableList.append(retDeliv)
 
    return filteredDeliverableList
 
