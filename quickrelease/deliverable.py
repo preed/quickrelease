@@ -2,7 +2,6 @@
 import copy
 import os
 import re
-import types
 
 from quickrelease.config import ConfigSpecError, ConfigSpec
 from quickrelease.utils import ImportModule
