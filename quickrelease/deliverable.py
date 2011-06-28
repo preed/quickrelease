@@ -15,12 +15,12 @@ class Deliverable(object):
     "or a regex for the deliverable.")
 
    _gDeliverablesCache = {}
+   _gAttributeCallbackCache = {}
 
    ATTRIB_TYPE_CALLBACK = 0
    ATTRIB_TYPE_REGEX = 1
    ATTRIB_TYPE_VALUE = 2
 
-   ATTRIB_CALLBACK_CACHE = {}
 
    def __init__(self, deliverableFile, deliverableClass, config, *args,
     **kwargs):
@@ -86,9 +86,9 @@ class Deliverable(object):
          attributeHandlerDescriptor['type'] = attributeType
 
          if attributeType == Deliverable.ATTRIB_TYPE_CALLBACK:
-            if Deliverable.ATTRIB_CALLBACK_CACHE.has_key(attributeValue):
+            if Deliverable._gAttributeCallbackCache.has_key(attributeValue):
                attributeHandlerDescriptor['handler'] = (
-                Deliverable.ATTRIB_CALLBACK_CACHE[attributeValue])
+                Deliverable._gAttributeCallbackCache[attributeValue])
             else:
                try:
                   modParts = attributeValue.split('.')
@@ -96,7 +96,7 @@ class Deliverable(object):
                   handlerMod = ImportModule(modFile)
                   handlerFunction = getattr(handlerMod, modParts[-1])
                   attributeHandlerDescriptor['handler'] = handlerFunction
-                  Deliverable.ATTRIB_CALLBACK_CACHE[attributeValue] = (
+                  Deliverable._gAttributeCallbackCache[attributeValue] = (
                    handlerFunction)
                except NameError, ex:
                   raise ConfigSpecError("Deliverable class '%s' defines an "
