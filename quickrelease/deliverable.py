@@ -180,7 +180,7 @@ def FindDeliverables(deliverableDir, config):
         ignoreUndefinedDeliverables = config.Get(
          'ignore_undefined_deliverables', bool)
     except ConfigSpecError, ex:
-        if ex.GetDetails() != ConfigSpecError.NO_OPTION_ERROR:
+        if ex.details != ConfigSpecError.NO_OPTION_ERROR:
             raise ex
 
     for root, dirs, files in os.walk(deliverableDir):
