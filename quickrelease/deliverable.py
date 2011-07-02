@@ -115,7 +115,8 @@ class Deliverable(object):
                          'regexflags').strip()
                         regexFlags = eval(regexFlagsStr) 
                     except ConfigSpecError:
-                        pass
+                        if ex.details != ConfigSpecError.NO_OPTION_ERROR:
+                            raise ex
 
                     attributeHandlerDescriptor['regexFlags'] = regexFlags
             else:
@@ -222,7 +223,8 @@ def FindDeliverables(deliverableDir, config):
                          'regexflags').strip()
                         regexFlags = eval(regexFlagsStr)
                     except ConfigSpecError:
-                        pass
+                        if ex.details != ConfigSpecError.NO_OPTION_ERROR:
+                            raise ex
 
                 else:
                     raise ConfigSpecError(
