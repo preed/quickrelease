@@ -93,10 +93,7 @@ class Deliverable(object):
                      Deliverable._gAttributeCallbackCache[attributeValue])
                 else:
                     try:
-                        modParts = attributeValue.split('.')
-                        modFile = '.'.join(modParts[:-1])
-                        handlerMod = ImportModule(modFile)
-                        handlerFunction = getattr(handlerMod, modParts[-1])
+                        handlerFunction = ImportFunction(attributeValue)
                         attributeHandlerDescriptor['handler'] = handlerFunction
                         Deliverable._gAttributeCallbackCache[attributeValue] = (
                          handlerFunction)
@@ -260,13 +257,9 @@ def FindDeliverables(deliverableDir, config):
 
                 if delivDesc['subclass'] is not None:
                     try:
-                        subclassParts = delivDesc['subclass'].split('.')
-                        mod = __import__('.'.join(subclassParts[:-1]))
-                        for comp in subclassParts[1:]:
-                            mod = getattr(mod, comp)
-
-                        newDelivObj = mod(delivDesc['file'], delivDesc['class'],
-                         config)
+                        subclassModule = ImportFunction(delivDesc['subclass'])
+                        newDelivObj = subclassModule(delivDesc['file'],
+                         delivDesc['class'], config)
                     except NameError, ex:
                         raise ConfigSpecError("subclass error %s" % (ex)) 
                 else:

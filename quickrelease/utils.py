@@ -79,3 +79,9 @@ def ImportModule(moduleName):
         module = getattr(module, comp)
 
     return module
+
+def ImportFunction(functionName):
+    moduleNameParts = functionName.split('.')
+    moduleName = '.'.join(moduleNameParts[:-1])
+    function = getattr(ImportModule(moduleName), moduleNameParts[-1])
+    return function
