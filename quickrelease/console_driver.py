@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# ex:ts=4:sw=4:sts=4:et
+# -*- tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*-
 #
 # Copyright (c) 2010-2011 Pioneers of the Inevitable/Songbird
 # Copyright (c) 2011      J. Paul Reed
@@ -35,142 +37,143 @@ QUICK_RELEASE_VERSION = '0.11.0pre'
 gRootDir = None
 
 def main():
-   global gRootDir
+    global gRootDir
 
-   o = OptionParser(usage="%s [ -l [-p ProcessName ] | "
-    "-c config.cfg -p ProcessName [options] ]" % (sys.argv[0]),
-    version="%prog version " + QUICK_RELEASE_VERSION)
-   o.add_option('-1', '--onestep', dest='runOneStep', default=False,
-                action='store_true',
-                help="Run only a single step of the specified process; "
-                "useful with --start-at.")
-   o.add_option('-c', '--config', dest='configSpecFile', default=None,
-                help="Harness configuration specification file to use. "
-                "Required.")
-   o.add_option('-i', '--ignore-errors', dest='ignoreErrors', default=False,
-                action='store_true',
-                help="Ignore any errors encountered while running; continue "
+    o = OptionParser(usage="%s [ -l [-p ProcessName ] | "
+                     "-c config.cfg -p ProcessName [options] ]" % (sys.argv[0]),
+                     version="%prog version " + QUICK_RELEASE_VERSION)
+    o.add_option('-1', '--onestep', dest='runOneStep', default=False,
+                 action='store_true',
+                 help="Run only a single step of the specified process; "
+                 "useful with --start-at.")
+    o.add_option('-c', '--config', dest='configSpecFile', default=None,
+                 help="Harness configuration specification file to use. "
+                 "Required.")
+    o.add_option('-i', '--ignore-errors', dest='ignoreErrors', default=False,
+                 action='store_true',
+                 help="Ignore any errors encountered while running; continue "
                  "on with the next steps")
-   o.add_option('-l', '--list', dest='showList', default=False,
-                action='store_true',
-                help="List all available processes or, if with -p, "
-                "all steps that constitute a prcoess.")
-   o.add_option('-p', '--process', dest='process', default=None,
-                help="Process to run/list steps of.")
-   o.add_option('-r', '--root', dest='rootDir', default=os.getcwd(),
-                help="Root directory to use; default: cwd")
-   o.add_option('-s', '--start-at', dest='startAt', default=None,
-                help="Step Name to start at")
-   o.add_option('-V', '--verify-only', dest='verifyOnly', default=False,
-                action='store_true',
-                help="Only run the Verify portion of the specified steps.")
-   o.add_option('-X', '--execute-only', dest='executeOnly', default=False,
-                action='store_true',
-                help="Only run the Execute portion of the specified steps.")
+    o.add_option('-l', '--list', dest='showList', default=False,
+                 action='store_true',
+                 help="List all available processes or, if with -p, "
+                 "all steps that constitute a prcoess.")
+    o.add_option('-p', '--process', dest='process', default=None,
+                 help="Process to run/list steps of.")
+    o.add_option('-r', '--root', dest='rootDir', default=os.getcwd(),
+                 help="Root directory to use; default: cwd")
+    o.add_option('-s', '--start-at', dest='startAt', default=None,
+                 help="Step Name to start at")
+    o.add_option('-V', '--verify-only', dest='verifyOnly', default=False,
+                 action='store_true',
+                 help="Only run the Verify portion of the specified steps.")
+    o.add_option('-X', '--execute-only', dest='executeOnly', default=False,
+                 action='store_true',
+                 help="Only run the Execute portion of the specified steps.")
 
-   if len(sys.argv[1:]) == 0:
-      o.print_help(file=sys.stderr)
-      return 0
+    if len(sys.argv[1:]) == 0:
+        o.print_help(file=sys.stderr)
+        return 0
 
-   (options, args) = o.parse_args()
+    (options, args) = o.parse_args()
 
-   #if (options.mode is None):
-   #   o.print_help(file=sys.stderr)
-   #   return -1
+    #if (options.mode is None):
+    #    o.print_help(file=sys.stderr)
+    #    return -1
 
-   if options.showList:
-      try:
-         if options.process:
-            process = GetProcessByName(options.process)
-            if process is None:
-               print >> sys.stderr, "Unknown process: %s" % (options.process)
-               return -1
+    if options.showList:
+        try:
+            if options.process:
+                process = GetProcessByName(options.process)
+                if process is None:
+                    print >> sys.stderr, "Unknown process: %s" % (
+                     options.process)
+                    return -1
 
-            processStepNames = process.GetProcessStepNames()
+                processStepNames = process.GetProcessStepNames()
 
-            print "Steps for the %s process:" % (str(process))
-            for i in range(len(processStepNames)):
-               print "%3d. %s" % (i + 1, processStepNames[i])
+                print "Steps for the %s process:" % (str(process))
+                for i in range(len(processStepNames)):
+                    print "%3d. %s" % (i + 1, processStepNames[i])
 
-         else:
-            # Do this first, so if we have an import error, we error out
-            # before printing anything
-            procs = GetAvailableProcessesList()
+            else:
+                # Do this first, so if we have an import error, we error out
+                # before printing anything
+                procs = GetAvailableProcessesList()
 
-            print "Available processes:"
-            for p in procs:
-               print "   * " + str(p)
-      except ReleaseFrameworkError, ex:
-         print >> sys.stderr, "Release Framework Exception: " + str(ex)
-         return -1
-      except KeyboardInterrupt:
-         print >> sys.stderr, "Interrupted."
-         return 0
-      except AssertionError, ex:
-         print >> sys.stderr, "Failed assertion: %s" % (ex)
-         return -1
+                print "Available processes:"
+                for p in procs:
+                    print "    * " + str(p)
+        except ReleaseFrameworkError, ex:
+            print >> sys.stderr, "Release Framework Exception: " + str(ex)
+            return -1
+        except KeyboardInterrupt:
+            print >> sys.stderr, "Interrupted."
+            return 0
+        except AssertionError, ex:
+            print >> sys.stderr, "Failed assertion: %s" % (ex)
+            return -1
 
-      return 0
+        return 0
 
-   gRootDir = os.path.abspath(options.rootDir)
+    gRootDir = os.path.abspath(options.rootDir)
 
-   if not os.path.isdir(gRootDir):
-      print >> sys.stderr, "Invalid root dir: %s" % (gRootDir)
-      o.print_help(file=sys.stderr)
-      return -1
+    if not os.path.isdir(gRootDir):
+        print >> sys.stderr, "Invalid root dir: %s" % (gRootDir)
+        o.print_help(file=sys.stderr)
+        return -1
 
-   try:
-      configSpec = ConfigSpec(options.configSpecFile)
-   except ConfigSpecError, ex:
-      print >> sys.stderr, str(ex)
-      return -1
+    try:
+        configSpec = ConfigSpec(options.configSpecFile)
+    except ConfigSpecError, ex:
+        print >> sys.stderr, str(ex)
+        return -1
 
-   if options.runOneStep:
-      stepsToRun = 1
-   else:
-      stepsToRun = None
+    if options.runOneStep:
+        stepsToRun = 1
+    else:
+        stepsToRun = None
 
-   if options.process is None:
-      o.print_help(file=sys.stderr)
-      return -1
+    if options.process is None:
+        o.print_help(file=sys.stderr)
+        return -1
 
-   if options.executeOnly and options.verifyOnly:
-      print >> sys.stderr, "Must either execute or verify the process steps."
-      return 1
+    if options.executeOnly and options.verifyOnly:
+        print >> sys.stderr, "Must either execute or verify the process steps."
+        return 1
 
-   try:
-      # TODO exception handling
+    try:
+        # TODO exception handling
 
-      try:
-         processToRun = GetProcessByName(options.process,
-          config=configSpec, verifySteps=not options.executeOnly,
-          executeSteps=not options.verifyOnly)
+        try:
+            processToRun = GetProcessByName(options.process,
+             config=configSpec, verifySteps=not options.executeOnly,
+             executeSteps=not options.verifyOnly)
 
-         if processToRun is None:
-            raise ValueError("Unknown process: %s" % (options.process))
+            if processToRun is None:
+                raise ValueError("Unknown process: %s" % (options.process))
 
-         processToRun.RunProcess(startingStepName=options.startAt,
-          stepsToRun=stepsToRun)
-      except ValueError, ex:
-         print >> sys.stderr, ex
-         return -1
-      except ReleaseFrameworkError, ex:
-         print >> sys.stderr, "Release Framework Exception: " + str(ex)
-         return -1
+            processToRun.RunProcess(startingStepName=options.startAt,
+             stepsToRun=stepsToRun)
+        except ValueError, ex:
+            print >> sys.stderr, ex
+            return -1
+        except ReleaseFrameworkError, ex:
+            print >> sys.stderr, "Release Framework Exception: " + str(ex)
+            return -1
 
-   except AssertionError, ex:
-      print >> sys.stderr, "Failed assertion: %s" % (ex)
-      return -1
+    except AssertionError, ex:
+        print >> sys.stderr, "Failed assertion: %s" % (ex)
+        return -1
 
-   print >> sys.stderr, "Process %s completed successfully." % (options.process)
-   return 0
-
+    print >> sys.stderr, "Process %s completed successfully." % (
+     options.process)
+    return 0
 
 if (sys.version_info[0] != 2 
-    or sys.version_info[1] <= 4):
-   print >> sys.stderr, ("quickrelease has only been tested with Python "
-    "2.5.x - 2.7.x.")
-   sys.exit(-1)
+ or sys.version_info[1] <= 4):
+     print >> sys.stderr, ("quickrelease has only been tested with Python "
+      "2.5.x - 2.7.x.")
+     sys.exit(-1)
 
 if __name__ == '__main__':
-   sys.exit(main())
+     sys.exit(main())
