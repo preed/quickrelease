@@ -32,7 +32,7 @@ from quickrelease.process import Process, GetAvailableProcessesList, GetProcessB
 from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
 
-QUICK_RELEASE_VERSION = '0.11.0pre'
+QUICK_RELEASE_VERSION = '0.12.0pre'
 
 gRootDir = None
 
