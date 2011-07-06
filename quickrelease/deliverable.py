@@ -114,7 +114,7 @@ class Deliverable(object):
                         regexFlagsStr = config.SectionGet(self.configSection,
                          'regexflags').strip()
                         regexFlags = eval(regexFlagsStr) 
-                    except ConfigSpecError:
+                    except ConfigSpecError, ex:
                         if ex.details != ConfigSpecError.NO_OPTION_ERROR:
                             raise ex
 
@@ -233,7 +233,7 @@ def FindDeliverables(deliverableDir, config):
                         regexFlagsStr = config.SectionGet(section,
                          'regexflags').strip()
                         regexFlags = eval(regexFlagsStr)
-                    except ConfigSpecError:
+                    except ConfigSpecError, ex:
                         if ex.details != ConfigSpecError.NO_OPTION_ERROR:
                             raise ex
 
