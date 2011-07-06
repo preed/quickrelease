@@ -209,7 +209,8 @@ def GetAvailableProcesses():
                          "part of process %s, but is not defined" %
                          (nameErrorMatch.group(1), f.split('.')[-1]))
                     else:
-                        raise ex
+                        raise ReleaseFrameworkError("%s: NameError: %s" % (f,
+                         ex), ex)
                 except ImportError, ex:
                     importErrorRegex = "No module named (.+)"
                     importErrorMatch = re.match(importErrorRegex, str(ex))
@@ -218,7 +219,8 @@ def GetAvailableProcesses():
                          "import undefined module %s" % (f,
                          importErrorMatch.group(1)))
                     else:
-                        raise ex
+                        raise ReleaseFrameworkError("%s: ImportError: %s" % (f,
+                         ex), ex)
                 except SyntaxError, ex:
                     definitionType = None
                     parentDir = os.path.basename(os.path.dirname(ex.filename))
