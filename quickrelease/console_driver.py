@@ -100,9 +100,13 @@ def main():
                 # before printing anything
                 procs = GetAvailableProcessesList()
 
-                print "Available processes:"
-                for p in procs:
-                    print "    * " + str(p)
+                print "Available processes: ",
+                if len(procs) == 0:
+                    print "None."
+                else:
+                    print
+                    for p in procs:
+                        print "    * " + str(p)
         except ReleaseFrameworkError, ex:
             print >> sys.stderr, "Release Framework Exception: " + str(ex)
             return -1
