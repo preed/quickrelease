@@ -180,6 +180,17 @@ class Deliverable(object):
              self.attributeHandlers[attribute]['handler'], self.GetFileName(),
              self.attributeHandlers[attribute]['regexFlags'])
 
+             if attribMatch is None:
+                 return None
+             elif len(attribMatch.groups()) == 1:
+                 return attribMatch.group(1)
+             else:
+                 return attribMatch.groups()
+        elif handlerType == Deliverable.ATTRIB_TYPE_CALLBACK:
+            return self.attributeHandlers[attribute]['handler'](self)
+        else:
+            assert False, "Unknown attribute handler type: %s" % (handlerType)
+
 def FindDeliverables(deliverableDir, config):
     if not os.path.isdir(deliverableDir):
         raise ValueError("Invalid deliverable directory: %s" % (deliverableDir))
@@ -239,11 +250,12 @@ def FindDeliverables(deliverableDir, config):
                         subclassType = config.SectionGet(section,
                          'subclass').strip()
 
-                    delivClassDescription = { 'type': matchType,
-                                              'subclass' : subclassType,
-                                              'class' : DeliverableClassFromSectionName(section),
-                                              'file' : os.path.join(root, f),
-                                             }
+                    delivClassDescription = { 
+                     'type': matchType,
+                     'subclass' : subclassType,
+                     'class' : DeliverableClassFromSectionName(section),
+                     'file' : os.path.join(root, f),
+                    }
 
 
                     deliverableDescList.append(delivClassDescription)
