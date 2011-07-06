@@ -143,8 +143,6 @@ class ConfigSpec:
 
         try:
             value = self.Get(name, coercion, interpOverrides)
-        except ConfigSpecError, ex:
-            raise ex
         finally:
             self.SetSection(origSection)
 
