@@ -224,9 +224,9 @@ def GetAvailableProcesses():
                 except SyntaxError, ex:
                     definitionType = None
                     parentDir = os.path.basename(os.path.dirname(ex.filename))
+                    processDetailStr = ""
                     if parentDir == QUICKRELEASE_PROCESSES_DIR:
                         definitionType = "process"
-                        processDetailStr = ""
                     elif parentDir == QUICKRELEASE_STEPS_DIR:
                         definitionType = "step"
                         processDetailStr = " (part of process %s)" % (
