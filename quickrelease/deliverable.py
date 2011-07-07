@@ -180,12 +180,12 @@ class Deliverable(object):
              self.attributeHandlers[attribute]['handler'], self.GetFileName(),
              self.attributeHandlers[attribute]['regexFlags'])
 
-             if attribMatch is None:
-                 return None
-             elif len(attribMatch.groups()) == 1:
-                 return attribMatch.group(1)
-             else:
-                 return attribMatch.groups()
+            if attribMatch is None:
+                return None
+            elif len(attribMatch.groups()) == 1:
+                return attribMatch.group(1)
+            else:
+                return attribMatch.groups()
         elif handlerType == Deliverable.ATTRIB_TYPE_CALLBACK:
             return self.attributeHandlers[attribute]['handler'](self)
         else:
