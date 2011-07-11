@@ -273,7 +273,7 @@ class RunShellCommand(object):
             timeoutStr = ""
             if self.timeout is not None and gUsingKillableProcess:
                 secondsStr = "seconds"
-                if timeout == 1:
+                if self.timeout == 1:
                     secondsStr = "second"
                 timeoutStr = " with timeout %d %s" % (self.timeout, secondsStr)
 
