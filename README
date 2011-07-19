@@ -80,4 +80,9 @@ top of the list to fix.
   that needs to be repeated during a single run of the process, with 
   slight changes in configuration.)
 
+* Better documentation on the classes/their use
+
+* "Property"-ize some of the classes; some of the classes are ripe to have
+  their getter/setters converted into more Pythonesque properties
+
 [0] "Quick release harness"... get it?
