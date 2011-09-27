@@ -121,7 +121,7 @@ class PartnerStep(Step):
         Step.__init__(self, *args, **kwargs)
         self._runner = PartnerStepRunner()
         self.activePartner = None
-        self.autoSetPartnerConfig = True
+        self.autoSetPartnerConfig = False
 
         if kwargs.has_key('auto_set_partner_config'):
             self.autoSetPartnerConfig = kwargs['auto_set_partner_config']
@@ -137,3 +137,6 @@ class PartnerStep(Step):
             raise self.SimpleStepError("Unknown  partner '%s'" % (partner))
 
         self.activePartner = partner
+
+        if self.AutoInitPartnerConfig():
+            self.GetConfig().SetPartnerSection(partner)
