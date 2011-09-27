@@ -9,7 +9,7 @@ import sys
 
 from quickrelease.step import Step
 from quickrelease.exception import ReleaseFrameworkError
-from quickrelease.utils import GetActivePartnerList, ImportModule
+from quickrelease.utils import ImportModule
 
 QUICKRELEASE_PROCESSES_DIR = 'processes'
 QUICKRELEASE_STEPS_DIR = 'steps'
@@ -136,33 +136,23 @@ class Process(object):
             self.PerformStep(step)
 
     def PerformStep(self, stepObj):
-        rootDir = self.GetConfig().GetRootDir()
-
-        partnerList = [ None ]
-        if stepObj.IsPartnerStep():
-            partnerList = GetActivePartnerList(self.GetConfig())
-
         try:
+            rootDir = self.GetConfig().GetRootDir()
+            stepRunner = stepObj.runner
+
             if self.executeSteps:
-                for p in partnerList:
-                    os.chdir(rootDir)
-                    stepObj.SetActivePartner(p)
-                    stepObj.Preflight()
-                    os.chdir(rootDir)
-                    stepObj.SetActivePartner(p)
-                    stepObj.Execute()
+                os.chdir(rootDir)
+                stepRunner.DoPreflight(stepObj)
+                os.chdir(rootDir)
+                stepRunner.DoExecute(stepObj)
 
             if self.verifySteps:
-                for p in partnerList:
-                    os.chdir(rootDir)
-                    stepObj.SetActivePartner(p)
-                    stepObj.Verify()
+                os.chdir(rootDir)
+                stepRunner.DoVerify(stepObj)
 
             if self.enableNotifications:
-                for p in partnerList:
-                    os.chdir(rootDir)
-                    stepObj.SetActivePartner(p)
-                    stepObj.Notify()
+                os.chdir(rootDir)
+                stepRunner.DoNotify(stepObj)
 
         except ReleaseFrameworkError, ex:
             if self.ignoreErrors:
