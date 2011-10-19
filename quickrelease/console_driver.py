@@ -28,9 +28,10 @@ from optparse import OptionParser
 import os
 import sys
 
-from quickrelease.process import Process, GetAvailableProcessesList, GetProcessByName
 from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
+from quickrelease.process import Process, GetAvailableProcessesList, GetProcessByName
+from quickrelease.utils import PrintReleaseFrameworkException
 
 QUICK_RELEASE_VERSION = '0.12.0pre'
 
@@ -148,7 +149,8 @@ def main():
         try:
             processToRun = GetProcessByName(options.process,
              config=configSpec, verifySteps=not options.executeOnly,
-             executeSteps=not options.verifyOnly)
+             executeSteps=not options.verifyOnly,
+             ignoreErrors=options.ignoreErrors)
 
             if processToRun is None:
                 raise ValueError("Unknown process: %s" % (options.process))
@@ -159,7 +161,7 @@ def main():
             print >> sys.stderr, ex
             return -1
         except ReleaseFrameworkError, ex:
-            print >> sys.stderr, "Release Framework Exception: " + str(ex)
+            PrintReleaseFrameworkException(ex)
             return -1
     except KeyboardInterrupt:
         print >> sys.stderr, "Interrupted."

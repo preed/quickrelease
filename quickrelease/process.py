@@ -156,8 +156,7 @@ class Process(object):
 
         except ReleaseFrameworkError, ex:
             if self.ignoreErrors:
-                # warn?
-                pass
+                PrintReleaseFrameworkException(ex)
             else:
                 raise ex
 
