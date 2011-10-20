@@ -9,7 +9,7 @@ import sys
 
 from quickrelease.step import Step
 from quickrelease.exception import ReleaseFrameworkError
-from quickrelease.utils import ImportModule
+from quickrelease.utils import ImportModule, PrintReleaseFrameworkException
 
 QUICKRELEASE_PROCESSES_DIR = 'processes'
 QUICKRELEASE_STEPS_DIR = 'steps'

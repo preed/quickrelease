@@ -5,6 +5,7 @@ import hashlib
 import os
 import platform
 import re
+import sys
 from urllib import FancyURLopener
 
 from quickrelease.config import ConfigSpec, ConfigSpecError
