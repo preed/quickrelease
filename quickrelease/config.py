@@ -116,6 +116,10 @@ class ConfigSpec:
 
         self.SetSection(self._GetPartnerSectionName(partner))
 
+        for item in self.GetAll():
+            self.GetRawConfig().set(self.GetDefaultSection(),
+             "PARTNER_%s" % (item[0]), item[1])
+
     @staticmethod
     def _GetPartnerSectionName(partnerName):
         return 'partner' + ConfigSpec.CONFIG_SECTION_DELIMETER + partnerName
