@@ -143,9 +143,8 @@ def main():
         print >> sys.stderr, "Must either execute or verify the process steps."
         return 1
 
+    processHadErrors = False
     try:
-        # TODO exception handling
-
         try:
             processToRun = GetProcessByName(options.process,
              config=configSpec, verifySteps=not options.executeOnly,
@@ -157,6 +156,8 @@ def main():
 
             processToRun.RunProcess(startingStepName=options.startAt,
              stepsToRun=stepsToRun)
+
+            processHadErrors = processToRun.HadErrors()
         except ValueError, ex:
             print >> sys.stderr, ex
             return -1
@@ -169,6 +170,9 @@ def main():
     except AssertionError, ex:
         print >> sys.stderr, "Failed assertion: %s" % (ex)
         return -1
+
+    if processHadErrors:
+       return -1 
 
     print >> sys.stderr, "Process %s completed successfully." % (
      options.process)

@@ -64,6 +64,7 @@ class Process(object):
         self.executeSteps = True
         self.verifySteps = True
         self.ignoreErrors = False
+        self.everHadErrors = False
         self.enableNotifications = False
 
         for arg in Process.RECOGNIZED_CONSTRUCTOR_ARGS:
@@ -83,6 +84,9 @@ class Process(object):
 
     def GetConfig(self):
         return self.config
+
+    def HadErrors(self):
+        return self.everHadErrors
 
     def GetProcessStepNames(self):
         if self.stepNames is None:
@@ -155,6 +159,7 @@ class Process(object):
                 stepRunner.DoNotify(stepObj)
 
         except ReleaseFrameworkError, ex:
+            self.everHadErrors = True
             if self.ignoreErrors:
                 PrintReleaseFrameworkException(ex)
             else:
