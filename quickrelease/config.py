@@ -143,9 +143,9 @@ class ConfigSpec:
 
     def SectionGet(self, section, name, coercion=None, interpOverrides=()):
         origSection = self.GetSection()
-        self.SetSection(section)
 
         try:
+            self.SetSection(section)
             value = self.Get(name, coercion, interpOverrides)
         finally:
             self.SetSection(origSection)
