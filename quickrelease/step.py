@@ -85,33 +85,29 @@ class PartnerStepRunner(object):
         object.__init__(self)
 
     def DoPreflight(self, stepObj):
-        conf = stepObj.GetConfig()
-        rootDir = conf.GetRootDir()
-        for p in GetActivePartnerList(conf):
+        rootDir = stepObj.GetConfig().GetRootDir()
+        for p in stepObj.GetActivePartnerList(conf):
             os.chdir(rootDir)
             stepObj.SetActivePartner(p)
             stepObj.Preflight()
 
     def DoExecute(self, stepObj):
-        conf = stepObj.GetConfig()
-        rootDir = conf.GetRootDir()
+        rootDir = stepObj.GetConfig().GetRootDir()
         for p in GetActivePartnerList(conf):
             os.chdir(rootDir)
             stepObj.SetActivePartner(p)
             stepObj.Execute()
 
     def DoVerify(self, stepObj):
-        conf = stepObj.GetConfig()
-        rootDir = conf.GetRootDir()
-        for p in GetActivePartnerList(conf):
+        rootDir = stepObj.GetConfig().GetRootDir()
+        for p in stepObj.GetActivePartnerList(conf):
             os.chdir(rootDir)
             stepObj.SetActivePartner(p)
             stepObj.Verify()
 
     def DoNotify(self, stepObj):
-        conf = stepObj.GetConfig()
-        rootDir = conf.GetRootDir()
-        for p in GetActivePartnerList(conf):
+        rootDir = stepObj.GetConfig().GetRootDir()
+        for p in stepObj.GetActivePartnerList(conf):
             os.chdir(rootDir)
             stepObj.SetActivePartner(p)
             stepObj.Notify()
@@ -122,6 +118,7 @@ class PartnerStep(Step):
         self._runner = PartnerStepRunner()
         self.activePartner = None
         self.autoSetPartnerConfig = False
+        self.partnerData = {}
 
         if kwargs.has_key('auto_set_partner_config'):
             self.autoSetPartnerConfig = kwargs['auto_set_partner_config']
@@ -140,3 +137,13 @@ class PartnerStep(Step):
 
         if self.AutoInitPartnerConfig():
             self.GetConfig().SetPartnerSection(partner)
+
+        if partner not in self.partnerData.keys():
+            self.partnerData[partner] = {}
+
+    def Save(self, key, data):
+        self.partnerData[self.GetActivePartner()][key] = data
+
+    def Load(self, key):
+        return self.partnerData[self.GetActivePartner()][key]
+
