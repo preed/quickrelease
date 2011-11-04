@@ -137,7 +137,7 @@ class PartnerStep(Step):
 
     def SetActivePartner(self, partner):
         if partner not in GetActivePartnerList(self.GetConfig()):
-            raise self.SimpleStepError("Unknown  partner '%s'" % (partner))
+            raise self.SimpleStepError("Unknown partner '%s'" % (partner))
 
         self.activePartner = partner
 
