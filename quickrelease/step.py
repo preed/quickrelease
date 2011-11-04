@@ -13,9 +13,14 @@ class StepError(ReleaseFrameworkError):
         assert isinstance(stepObj, Step), 'StepErrors require a Step object'
         self.erroredStep = stepObj
 
+        self._partnerStr = ""
+        if isinstance(stepObj, PartnerStep):
+            self._partnerStr = " (partner: %s)" % (
+             stepObj.GetActivePartner())
+
     def __str__(self):
-        return "Error in step %s: %s" % (str(self.erroredStep),
-         ReleaseFrameworkError.__str__(self))
+        return "Error in step %s%s: %s" % (str(self.erroredStep),
+         self._partnerStr, ReleaseFrameworkError.__str__(self))
 
 class StandardStepRunner(object):
     def __init__(self, *args, **kwargs):
@@ -84,33 +89,34 @@ class PartnerStepRunner(object):
     def __init__(self, *args, **kwargs):
         object.__init__(self)
 
+    def _RunPartnerStepMethod(self, stepObj, methodName):
+        conf = stepObj.GetConfig()
+        rootDir = conf.GetRootDir()
+        errors = []
+
+        for p in GetActivePartnerList(conf):
+            try:
+                os.chdir(rootDir)
+                stepObj.SetActivePartner(p)
+                stepMethod = getattr(stepObj, methodName)
+                stepMethod()
+            except ReleaseFrameworkError, ex:
+                errors.append(ex)
+
+        if len(errors) != 0:
+            raise ReleaseFrameworkErrorCollection(errors)
+
     def DoPreflight(self, stepObj):
-        rootDir = stepObj.GetConfig().GetRootDir()
-        for p in stepObj.GetActivePartnerList(conf):
-            os.chdir(rootDir)
-            stepObj.SetActivePartner(p)
-            stepObj.Preflight()
+        self._RunPartnerStepMethod(stepObj, "Preflight")
 
     def DoExecute(self, stepObj):
-        rootDir = stepObj.GetConfig().GetRootDir()
-        for p in GetActivePartnerList(conf):
-            os.chdir(rootDir)
-            stepObj.SetActivePartner(p)
-            stepObj.Execute()
+        self._RunPartnerStepMethod(stepObj, "Execute")
 
     def DoVerify(self, stepObj):
-        rootDir = stepObj.GetConfig().GetRootDir()
-        for p in stepObj.GetActivePartnerList(conf):
-            os.chdir(rootDir)
-            stepObj.SetActivePartner(p)
-            stepObj.Verify()
+        self._RunPartnerStepMethod(stepObj, "Verify")
 
     def DoNotify(self, stepObj):
-        rootDir = stepObj.GetConfig().GetRootDir()
-        for p in stepObj.GetActivePartnerList(conf):
-            os.chdir(rootDir)
-            stepObj.SetActivePartner(p)
-            stepObj.Notify()
+        self._RunPartnerStepMethod(stepObj, "Notify")
 
 class PartnerStep(Step):
     def __init__(self, *args, **kwargs):

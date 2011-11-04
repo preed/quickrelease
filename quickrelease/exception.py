@@ -15,3 +15,19 @@ class ReleaseFrameworkError(Exception):
 
     def __str__(self):
         return str(self.explanation)
+
+class ReleaseFrameworkErrorCollection(ReleaseFrameworkError):
+    def __init__(self, group):
+        # copy?
+        self._errorGroup = list(group)
+        ReleaseFrameworkError.__init__(self, None, group)
+
+        self._explanation = str(self)
+
+    def __str__(self):
+        errorStrs = list(str(x) for x in self._errorGroup)
+        return "Release Framework Errors:\n\t%s" % '\n\t'.join(errorStrs)
+
+    def append(releaseFrameworkError):
+        self._errorGroup.append(releaseFrameworkError)
+        self._explanation = str(self)
