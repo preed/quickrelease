@@ -128,7 +128,7 @@ class PartnerStep(Step):
         self.activePartner = None
         self.autoSetPartnerConfig = False
         self.haltOnFirstError = False
-        self.partnerData = {}
+        self._partnerData = {}
 
         if kwargs.has_key('auto_set_partner_config'):
             self.autoSetPartnerConfig = kwargs['auto_set_partner_config']
@@ -151,12 +151,12 @@ class PartnerStep(Step):
         if self.AutoInitPartnerConfig():
             self.GetConfig().SetPartnerSection(partner)
 
-        if partner not in self.partnerData.keys():
-            self.partnerData[partner] = {}
+        if partner not in self._partnerData.keys():
+            self._partnerData[partner] = {}
 
     def Save(self, key, data):
-        self.partnerData[self.GetActivePartner()][key] = data
+        self._partnerData[self.GetActivePartner()][key] = data
 
     def Load(self, key):
-        return self.partnerData[self.GetActivePartner()][key]
+        return self._partnerData[self.GetActivePartner()][key]
 
