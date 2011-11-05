@@ -101,7 +101,10 @@ class PartnerStepRunner(object):
                 stepMethod = getattr(stepObj, methodName)
                 stepMethod()
             except ReleaseFrameworkError, ex:
-                errors.append(ex)
+                if stepObj.haltOnFirstError:
+                    raise ex
+                else:
+                    errors.append(ex)
 
         if len(errors) != 0:
             raise ReleaseFrameworkErrorCollection(errors)
@@ -124,11 +127,15 @@ class PartnerStep(Step):
         self._runner = PartnerStepRunner()
         self.activePartner = None
         self.autoSetPartnerConfig = False
+        self.haltOnFirstError = False
         self.partnerData = {}
 
         if kwargs.has_key('auto_set_partner_config'):
             self.autoSetPartnerConfig = kwargs['auto_set_partner_config']
-        
+
+        if kwargs.has_key('halt_on_first_error'):
+            self.haltOnFirstError = kwargs['halt_on_first_error']
+
     def AutoInitPartnerConfig(self):
         return self.autoSetPartnerConfig
 
