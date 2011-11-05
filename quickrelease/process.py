@@ -144,9 +144,10 @@ class Process(object):
             rootDir = self.GetConfig().GetRootDir()
             stepRunner = stepObj.runner
 
+            os.chdir(rootDir)
+            stepRunner.DoPreflight(stepObj)
+
             if self.executeSteps:
-                os.chdir(rootDir)
-                stepRunner.DoPreflight(stepObj)
                 os.chdir(rootDir)
                 stepRunner.DoExecute(stepObj)
 
