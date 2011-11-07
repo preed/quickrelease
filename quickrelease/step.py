@@ -126,7 +126,7 @@ class PartnerStep(Step):
         Step.__init__(self, *args, **kwargs)
         self._runner = PartnerStepRunner()
         self.activePartner = None
-        self.autoSetPartnerConfig = False
+        self.autoSetPartnerConfig = True
         self.haltOnFirstError = False
         self._partnerData = {}
 
@@ -136,7 +136,7 @@ class PartnerStep(Step):
         if kwargs.has_key('halt_on_first_error'):
             self.haltOnFirstError = kwargs['halt_on_first_error']
 
-    def AutoInitPartnerConfig(self):
+    def AutoSetPartnerConfig(self):
         return self.autoSetPartnerConfig
 
     def GetActivePartner(self):
@@ -148,7 +148,7 @@ class PartnerStep(Step):
 
         self.activePartner = partner
 
-        if self.AutoInitPartnerConfig():
+        if self.AutoSetPartnerConfig():
             self.GetConfig().SetPartnerSection(partner)
 
         if partner not in self._partnerData.keys():
