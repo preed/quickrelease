@@ -4,7 +4,7 @@ from quickrelease.steps.TestSteps import *
 
 class TestProcess(Process):
     steps = [ TestStepOne,
-              TestStepTwo,
+              TestPartnerStepTwo,
               TestStepThree,
             ]
 

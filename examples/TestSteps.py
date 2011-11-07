@@ -1,34 +1,35 @@
 
-from quickrelease.step import Step
+from quickrelease.step import Step, PartnerStep
 
 class TestStepOne(Step):
     def __init__(self, *args, **kwargs):
         Step.__init__(self, *args, **kwargs)
 
     def Execute(self):
-        print
-        print "Execute TestStepOne."
+        print "EXECUTE TestStepOne."
         print "    Release version: %s" % (self.GetConfig().Get('version'))
 
     def Verify(self):
-        print "Verify TestStepOne."
+        print "VERIFY TestStepOne."
         print
 
-class TestStepTwo(Step):
+class TestPartnerStepTwo(PartnerStep):
     def __init__(self, *args, **kwargs):
-        Step.__init__(self, *args, **kwargs)
+        PartnerStep.__init__(self, *args, **kwargs)
     
     def Preflight(self):
-        print "Preflight TestStepTwo."
+        print "PREFLIGHT TestPartnerStepTwo with partner %s." % (
+         self.GetActivePartner())
 
     def Execute(self):
-        print "Execute TestStepTwo."
-        print "    Release version still: %s" % (
-         self.GetConfig().Get('version'))
+        print "EXECUTE TestPartnerStepTwo."
+        print "    Partner: %s" % (self.GetActivePartner())
+        print "    Version: %s" % (self.GetConfig().Get('version'))
+        print "    Partner build number: %s" % (
+         self.GetConfig().SectionGet('common', 'partner_build_number'))
 
     def Verify(self):
-        print "Verify TestStepTwo."
-        print
+        print "VERIFY TestPartnerStepTwo."
 
 
 class TestStepThree(Step):
@@ -36,9 +37,11 @@ class TestStepThree(Step):
         Step.__init__(self, *args, **kwargs)
     
     def Execute(self):
-        print "Execute TestStepThree.\n"
+        print
+        print "EXECUTE TestStepThree."
 
     def Verify(self):
-        print "Verify TestStepThree."
+        print "VERIFY TestStepThree:"
         print "    Verifying version still: %s" % (
          self.GetConfig().Get('version'))
+        print
