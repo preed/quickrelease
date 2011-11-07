@@ -3,7 +3,7 @@
 
 import os
 
-from quickrelease.exception import ReleaseFrameworkError
+from quickrelease.exception import ReleaseFrameworkError, ReleaseFrameworkErrorCollection
 from quickrelease.utils import GetActivePartnerList
 
 class StepError(ReleaseFrameworkError):
