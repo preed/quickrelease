@@ -12,7 +12,10 @@ from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
 
 def PrintReleaseFrameworkException(ex):
-   print >> sys.stderr, "Release Framework Exception: " + str(ex)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    print >> sys.stderr, "Release Framework Exception: " + str(ex)
+    sys.stderr.flush()
 
 def GetDeliverableRootPath(configSpec):
     return os.path.join(configSpec.Get('root_dir'),
