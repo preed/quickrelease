@@ -89,13 +89,17 @@ class _OutputQueueReader(Thread):
             if h.handle is not None:
                 h.handle.flush()
 
-    def GetOutput(self, outputType=PIPE_STDOUT):
+    def GetOutput(self, outputType=PIPE_STDOUT, raw=False):
         if not self.collectedOutput.has_key(outputType):
             raise ValueError("No output type %s processed by this output "
              "monitor" % (outputType))
 
-        return list(REMOVE_LINE_ENDING(x.content) for x in
-         self.collectedOutput[outputType])
+        if raw:
+            return ''.join(list(x.content for x in
+             self.collectedOutput[outputType]))
+        else:
+            return list(REMOVE_LINE_ENDING(x.content) for x in
+             self.collectedOutput[outputType])
 
 class RunShellCommandError(ReleaseFrameworkError):
     STDERR_DISPLAY_CONTEXT = 5
@@ -165,6 +169,7 @@ class RunShellCommand(object):
         self._processWasKilled = False
         self._processTimedOut = False
         self._stdout = None
+        self._rawstdout = None
         self._stderr = None
         self._startTime = None
         self._endTime = None
@@ -239,6 +244,7 @@ class RunShellCommand(object):
 
     def _GetCommand(self): return self._command
     def _GetStdout(self): return self._stdout
+    def _GetRawStdout(self): return self._rawstdout
     def _GetStderr(self): return self._stderr
     def _GetStartTime(self): return self._startTime
     def _GetEndTime(self): return self._endTime
@@ -255,6 +261,7 @@ class RunShellCommand(object):
 
     command = property(_GetCommand)
     stdout = property(_GetStdout)
+    rawstdout = property(_GetRawStdout)
     stderr = property(_GetStderr)
     runningtime = property(_GetRunningTime)
     starttime = property(_GetStartTime)
@@ -402,6 +409,8 @@ class RunShellCommand(object):
                 #    print "Line %d time: %s" % (i, outputMonitor.collectedOutput[i]['time'])
 
                 self._stdout = outputMonitor.GetOutput(PIPE_STDOUT)
+                self._rawstdout = outputMonitor.GetOutput(PIPE_STDOUT,
+                 raw=True)
                 self._stderr = outputMonitor.GetOutput(PIPE_STDERR)
                 self._endTime = procEndTime
                 self._returncode = process.returncode
