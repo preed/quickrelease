@@ -4,7 +4,7 @@
 import os
 
 from quickrelease.exception import ReleaseFrameworkError, ReleaseFrameworkErrorCollection
-from quickrelease.utils import GetActivePartnerList
+from quickrelease.utils import GetActivePartnerList, PrintReleaseFrameworkError
 
 class StepError(ReleaseFrameworkError):
     def __init__(self, stepObj, errStr, *args, **kwargs):
@@ -104,6 +104,8 @@ class PartnerStepRunner(object):
                 if stepObj.haltOnFirstError:
                     raise ex
                 else:
+                    # Unless we're in quiet mode...
+                    PrintReleaseFrameworkError(ex)
                     errors.append(ex)
 
         if len(errors) != 0:

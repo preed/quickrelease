@@ -31,7 +31,7 @@ import sys
 from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
 from quickrelease.process import Process, GetAvailableProcessesList, GetProcessByName
-from quickrelease.utils import PrintReleaseFrameworkException
+from quickrelease.utils import PrintReleaseFrameworkError
 
 QUICK_RELEASE_VERSION = '0.13.0pre'
 
@@ -109,7 +109,7 @@ def main():
                     for p in procs:
                         print "    * " + str(p)
         except ReleaseFrameworkError, ex:
-            print >> sys.stderr, "Release Framework Exception: " + str(ex)
+            PrintReleaseFrameworkError(ex)
             return -1
         except AssertionError, ex:
             print >> sys.stderr, "Failed assertion: %s" % (ex)
@@ -162,7 +162,7 @@ def main():
             print >> sys.stderr, ex
             return -1
         except ReleaseFrameworkError, ex:
-            PrintReleaseFrameworkException(ex)
+            PrintReleaseFrameworkError(ex)
             return -1
     except KeyboardInterrupt:
         print >> sys.stderr, "Interrupted."

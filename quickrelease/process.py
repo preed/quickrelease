@@ -9,7 +9,7 @@ import sys
 
 from quickrelease.step import Step
 from quickrelease.exception import ReleaseFrameworkError
-from quickrelease.utils import ImportModule, PrintReleaseFrameworkException
+from quickrelease.utils import ImportModule, PrintReleaseFrameworkError
 
 QUICKRELEASE_PROCESSES_DIR = 'processes'
 QUICKRELEASE_STEPS_DIR = 'steps'
@@ -162,7 +162,7 @@ class Process(object):
         except ReleaseFrameworkError, ex:
             self.everHadErrors = True
             if self.ignoreErrors:
-                PrintReleaseFrameworkException(ex)
+                PrintReleaseFrameworkError(ex)
             else:
                 raise ex
 

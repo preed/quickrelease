@@ -11,10 +11,10 @@ from urllib import FancyURLopener
 from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
 
-def PrintReleaseFrameworkException(ex):
+def PrintReleaseFrameworkError(ex):
     sys.stdout.flush()
     sys.stderr.flush()
-    print >> sys.stderr, "Release Framework Exception: " + str(ex)
+    print >> sys.stderr, "Release Framework Error: " + str(ex)
     sys.stderr.flush()
 
 def GetDeliverableRootPath(configSpec):
