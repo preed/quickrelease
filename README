@@ -76,13 +76,15 @@ top of the list to fix.
   shell redirects or /usr/bin/tee. This should provided for the user by
   quickrelease.
 
-* Ditto the concept of "partners" (or, really, any set of process steps 
-  that needs to be repeated during a single run of the process, with 
-  slight changes in configuration.)
-
 * Better documentation on the classes/their use
+
+* Cygwin support (works on Win32 under MSYS/MozillaBuild)
 
 * "Property"-ize some of the classes; some of the classes are ripe to have
   their getter/setters converted into more Pythonesque properties
+
+A comprehensive list of issues being tracked can be found at:
+
+https://github.com/preed/quickrelease/issues
 
 [0] "Quick release harness"... get it?
