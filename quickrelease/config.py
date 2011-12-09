@@ -24,6 +24,8 @@ class ConfigSpecError(ReleaseFrameworkError):
 class ConfigSpec:
     DEFAULT_STARTING_SECTION = 'DEFAULT'
     CONFIG_SECTION_DELIMETER = ':'
+    DELIV_SECTION_PREFIX = 'deliverable'
+    PARTNER_SECTION_PREFIX = 'partner'
 
     @staticmethod
     def GetConstant(name):
@@ -122,11 +124,13 @@ class ConfigSpec:
 
     @staticmethod
     def _GetPartnerSectionName(partnerName):
-        return 'partner' + ConfigSpec.CONFIG_SECTION_DELIMETER + partnerName
+        return (ConfigSpec.PARTNER_SECTION_PREFIX +
+         ConfigSpec.CONFIG_SECTION_DELIMETER + partnerName)
   
     @staticmethod
     def _GetDeliverableSectionName(delivName):
-        return 'deliverable' + ConfigSpec.CONFIG_SECTION_DELIMETER + delivName
+        return (ConfigSpec.DELIV_SECTION_PREFIX + 
+         ConfigSpec.CONFIG_SECTION_DELIMETER + delivName)
 
     def ValidDeliverable(self, deliverable):
         return (self._GetDeliverableSectionName(deliverable) in
