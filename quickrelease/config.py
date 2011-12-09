@@ -203,7 +203,7 @@ class ConfigSpec:
             errCode = ConfigSpecError.INTERPOLATION_MISSING_OPTION_ERROR
         elif errType is ConfigParser.InterpolationSyntaxError:
             errCode = ConfigSpecError.INTERPOLATION_SYNTAX_ERROR
-        elif errType is ConfigParser.ParseError:
+        elif errType is ConfigParser.ParsingError:
             errCode = ConfigSpecError.PARSE_ERROR
 
         if errCode is None:
