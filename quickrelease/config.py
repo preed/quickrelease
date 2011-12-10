@@ -3,6 +3,7 @@
 
 import ConfigParser
 import os
+import re
 
 from quickrelease import constants
 from quickrelease.exception import ReleaseFrameworkError
@@ -68,7 +69,11 @@ class ConfigSpec:
             if self.GetSection() not in self.GetSectionList():
                 raise ConfigSpecError("Invalid initial section '%s'" %
                  (self.GetSection()))
-    
+
+        # Need to prefill these in, so they don't blow up, but since
+        # SetActivePartner hasn't been called yet, they're all blank
+        self._ResetPartnerDefaultSectionVars()
+
     def GetRootDir(self):
         return self.rootDirectory
 
@@ -112,11 +117,23 @@ class ConfigSpec:
              (newSection), 'INVALID_SECTION')
         self.currentSection = newSection
 
+    def _ResetPartnerDefaultSectionVars(self):
+        for sect in self.GetSectionList():
+            if ConfigSpec._IsPartnerSection(sect):
+                for opt in self.GetRawConfig().options(sect):
+                    #print "Option in %s: %s" % (sect, o)
+                    self.GetRawConfig().set(self.GetDefaultSection(),
+                     "PARTNER_%s" % (opt), "")
+    
     def SetPartnerSection(self, partner):
         if not self.ValidPartner(partner):
             raise ConfigSpecError("Invalid/unknown partner: %s" % (partner))
 
         self.SetSection(self._GetPartnerSectionName(partner))
+
+        # We do this so different variables from other partner sections don't
+        # polute the default variable namespace
+        self._ResetPartnerDefaultSectionVars()
 
         for item in self.GetAll():
             self.GetRawConfig().set(self.GetDefaultSection(),
@@ -126,7 +143,12 @@ class ConfigSpec:
     def _GetPartnerSectionName(partnerName):
         return (ConfigSpec.PARTNER_SECTION_PREFIX +
          ConfigSpec.CONFIG_SECTION_DELIMETER + partnerName)
-  
+
+    @staticmethod
+    def _IsPartnerSection(sectionName):
+       return (re.match('^%s%s' % (ConfigSpec.PARTNER_SECTION_PREFIX,
+        ConfigSpec.CONFIG_SECTION_DELIMETER), sectionName) is not None)
+
     @staticmethod
     def _GetDeliverableSectionName(delivName):
         return (ConfigSpec.DELIV_SECTION_PREFIX + 
