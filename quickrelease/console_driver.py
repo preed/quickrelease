@@ -50,6 +50,12 @@ def main():
     o.add_option('-c', '--config', dest='configSpecFile', default=None,
                  help="Harness configuration specification file to use. "
                  "Required.")
+    o.add_option('-D', '--define', dest='variableRedefs', default=[],
+                 action='append',
+                 help="Specify config file variable overrides on the "
+                 "commandline. Must be enabled in the configuration file "
+                 "specified by --config. "
+                 "Use: -D[section:]variable_name=override_value")
     o.add_option('-i', '--ignore-errors', dest='ignoreErrors', default=False,
                  action='store_true',
                  help="Ignore any errors encountered while running; continue "
@@ -125,7 +131,8 @@ def main():
         return -1
 
     try:
-        configSpec = ConfigSpec(options.configSpecFile)
+        configSpec = ConfigSpec(options.configSpecFile,
+         overrides=options.variableRedefs)
     except ConfigSpecError, ex:
         print >> sys.stderr, str(ex)
         return -1
