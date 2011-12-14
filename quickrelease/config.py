@@ -22,6 +22,10 @@ class ConfigSpecError(ReleaseFrameworkError):
     def __str__(self):
          return "ConfigSpec Error: " + ReleaseFrameworkError.__str__(self)
 
+OVERRIDES_DISABLED_ERR_STR = ("Commandline variable overrides are not enabled "
+ "in config file %s; enable them by setting 'allow_config_overrides' in the "
+ "default section.")
+
 class ConfigSpec:
     DEFAULT_STARTING_SECTION = 'DEFAULT'
     CONFIG_SECTION_DELIMETER = ':'
@@ -48,17 +52,24 @@ class ConfigSpec:
         return constants.QUICKRELEASE_CONSTANTS.keys()
 
     def __init__(self, configFile, rootDir=os.getcwd(),
-     section=DEFAULT_STARTING_SECTION):
+     section=DEFAULT_STARTING_SECTION, overrides=()):
 
         if configFile is None:
             raise ConfigSpecError("No config file specified.")
         elif not os.path.isfile(configFile):
             raise ConfigSpecError("Invalid config file specified.")
 
+        self.configFile = configFile
         self.configSpec = ConfigParser.SafeConfigParser()
         self.rootDirectory = rootDir
         self.currentSection = section
         self.defaultSection = section
+
+        # Overrides are not allowed by default.
+        self.allowOverrides = False
+
+        # Override hash given from the commandline (i.e. -D)
+        self._clOverrides = {}
 
         try:
             self.configSpec.read(configFile)
@@ -73,6 +84,41 @@ class ConfigSpec:
         # Need to prefill these in, so they don't blow up, but since
         # SetActivePartner hasn't been called yet, they're all blank
         self._ResetPartnerDefaultSectionVars()
+  
+        try:
+            self.allowOverrides = self.Get('allow_config_overrides', bool)
+        except ConfigSpecError, ex:
+            if ConfigSpecError.NO_OPTION_ERROR != ex.details:
+                raise ex
+
+        if len(overrides) != 0:
+            if not self.allowOverrides:
+                raise ConfigSpecError(OVERRIDES_DISABLED_ERR_STR % (configFile))
+
+            for o in overrides:
+                try:
+                    if not re.match('^(\w.+:)?[\w\-_]+=[\w\-_\.]+$', o):
+                        raise ValueError()
+
+                    (overrideKey, overrideVal) = o.split('=')
+                except ValueError:
+                    raise ConfigSpecError("Invalid commandline override: %s"
+                     % (o))
+
+                overrideSection = overrideName = None
+                try:
+                    (overrideSection, overrideName) = overrideKey.split(":")
+                except ValueError:
+                    overrideSection = self.defaultSection
+                    overrideName = overrideKey
+
+                overrideSection.strip()
+                overrideName.strip()
+
+                if not self._clOverrides.has_key(overrideSection):
+                    self._clOverrides[overrideSection] = {}
+
+                self._clOverrides[overrideSection][overrideName] = overrideVal
 
     def GetRootDir(self):
         return self.rootDirectory
@@ -90,6 +136,7 @@ class ConfigSpec:
         if sectionName is None:
             sectionName = self.currentSection
 
+        # TODO: include overrides
         try:
             return list(x[0] for x in self.GetRawConfig().items(sectionName))
         except ConfigParser.Error, ex:
@@ -99,6 +146,7 @@ class ConfigSpec:
         if sectionName is None:
             sectionName = self.currentSection
 
+        # TODO: include overrides
         try:
             return self.GetRawConfig().items(sectionName)
         except ConfigParser.Error, ex:
@@ -161,13 +209,13 @@ class ConfigSpec:
     def ValidPartner(self, partner):
         return self._GetPartnerSectionName(partner) in self.GetSectionList()
 
-    def PartnerGet(self, partner, name, coercion=None, interpolation=()):
+    def PartnerGet(self, partner, name, coercion=None, interpolation={}):
         return self.SectionGet(self._GetPartnerSectionName(partner),
                                       name,
                                       coercion,
                                       interpolation)
 
-    def SectionGet(self, section, name, coercion=None, interpOverrides=()):
+    def SectionGet(self, section, name, coercion=None, interpOverrides={}):
         origSection = self.GetSection()
 
         try:
@@ -178,20 +226,67 @@ class ConfigSpec:
 
         return value
 
-    def Get(self, name, coercion=None, interpOverrides=()):
+    def Get(self, name, coercion=None, interpOverrides={}):
         getRawValues = False
         overrides = None
+
+        if coercion not in (bool, str, int, float, list, None):
+            raise ConfigSpecError("Invalid coercion type specified: %s" %
+             (coercion), ConfigSpecError.COERCION_TYPE_ERROR)
+
+        if self.allowOverrides:
+            # It would be nice to just use ConfigParser's built in ability
+            # to handle overrides; unfortunately, if a type-conversion is
+            # requested, getboolean/getfloat/etc. don't support such overrides
+
+            override = None
+            try:
+                override = self._clOverrides[self.currentSection][name]
+            except KeyError:
+                # Check the default section too...
+                try:
+                    override = self._clOverrides[self.defaultSection][name]
+                except KeyError:
+                    pass
+
+            if override is not None:
+                if coercion is None:
+                    return override
+                else:
+                    return coercion(override)
 
         if interpOverrides is None:
             getRawValues = True
         else:
+            if not self.allowOverrides and len(interpOverrides.keys()) != 0:
+                raise ConfigSpecError(OVERRIDES_DISABLED_ERR_STR % 
+                 (self.configFile))
+
+            # _And_ we have to do this here so variables that consist of other
+            # (interpolated) variables correctly pick up the overrides specified
+            # in the environment.
+            envCurrentSectionOverrides = {}
+            envDefaultSectionOverrides = {}
+        
             try:
-                # Attempt to convert our argument to a tuple for type-checking
-                # purposes.
-                overrides = tuple(interpOverrides)
+                envCurrentSectionOverrides = self._clOverrides[
+                 self.currentSection]
+            except KeyError:
+                pass
+            try:
+                envDefaultSectionOverrides = self._clOverrides[
+                 self.defaultSection]
+            except KeyError:
+                pass
+
+            try:
+                # ORDER MATTERS HERE: 
+                overrides = dict(interpOverrides.items() +
+                                 envDefaultSectionOverrides.items() +
+                                 envCurrentSectionOverrides.items())
             except TypeError:
                 raise ConfigSpecError("Invalid interpolation overrides "
-                 "specified; must be convertable to a tuple.",
+                 "specified; must be convertable a dictionary.",
                  ConfigSpecError.COERCION_TYPE_ERROR)
 
         try:
@@ -204,12 +299,10 @@ class ConfigSpec:
             elif coercion is list:
                 return self.configSpec.get(self.currentSection, name,
                  getRawValues, overrides).split()
-            elif coercion is None:
+            elif coercion is None or coercion is str:
                 return self.configSpec.get(self.currentSection, name,
                  getRawValues, overrides)
 
-            raise ConfigSpecError("Invalid coercion type specified: %s" %
-             (coercion), ConfigSpecError.COERCION_TYPE_ERROR)
         except ConfigParser.Error, ex:
             raise self._ConvertToConfigParserError(ex)
 
