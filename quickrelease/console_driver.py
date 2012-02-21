@@ -187,8 +187,8 @@ def main():
 
 if (sys.version_info[0] != 2 
  or sys.version_info[1] <= 4):
-     print >> sys.stderr, ("quickrelease has only been tested with Python "
-      "2.5.x - 2.7.x.")
+     print >> sys.stderr, ("%s has only been tested with Python 2.5.x - "
+      "2.7.x; please use one of these versions." % (sys.argv[0]))
      sys.exit(-1)
 
 if __name__ == '__main__':
