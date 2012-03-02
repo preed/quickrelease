@@ -21,6 +21,10 @@ QUICKRELEASE_DEFINITIONS_PATH = os.getenv('QUICKRELEASE_DEFINITIONS_PATH')
 
 if QUICKRELEASE_DEFINITIONS_PATH is not None:
     for path in QUICKRELEASE_DEFINITIONS_PATH.split(os.path.pathsep):
+        if re.search('\-', path):
+            raise RuntimeWarning("Dashes (-) are not allowed in the "
+             "QUICKRELEASE_DEFINITIONS_PATH, due to Python's import-statement "
+             "limitations.")
         absPath = os.path.abspath(path)
         gProcessAndStepDefnPath.append(absPath)
         sys.path.append(os.path.dirname(absPath))
