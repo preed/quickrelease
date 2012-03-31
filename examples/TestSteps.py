@@ -8,6 +8,8 @@ class TestStepOne(Step):
     def Execute(self):
         print "EXECUTE TestStepOne."
         print "    Release version: %s" % (self.GetConfig().Get('version'))
+        print "    Release build number: %s" % (
+         self.GetConfig().Get('build_number'))
 
     def Verify(self):
         print "VERIFY TestStepOne."
