@@ -86,7 +86,8 @@ class ConfigSpec:
         self._ResetPartnerDefaultSectionVars()
   
         try:
-            self.allowOverrides = self.Get('allow_config_overrides', bool)
+            self.allowOverrides = self.SectionGet(self.GetDefaultSection(),
+             'allow_config_overrides', bool)
         except ConfigSpecError, ex:
             if ConfigSpecError.NO_OPTION_ERROR != ex.details:
                 raise ex
