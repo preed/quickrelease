@@ -236,76 +236,78 @@ class ConfigSpec:
         return value
 
     def Get(self, name, coercion=None, interpOverrides={}):
-        getRawValues = False
+        getRawValues = interpOverrides is None
         overrides = None
 
         if coercion not in (bool, str, int, float, list, None):
             raise ConfigSpecError("Invalid coercion type specified: %s" %
              (coercion), ConfigSpecError.COERCION_TYPE_ERROR)
 
-        if self.allowOverrides:
-            # It would be nice to just use ConfigParser's built in ability
-            # to handle overrides; unfortunately, if a type-conversion is
-            # requested, getboolean/getfloat/etc. don't support such overrides
+        # Overrides/raw values aren't supported by the underlying
+        # ConfigParser class, so skip all the override stuff and fast-track
+        # coercions of this type
+        if coercion in (bool, int, float):
+            if getRawValues or len(interpOverrides.keys()) != 0:
+                raise ConfigSpecError("Raw values and overrides are not "
+                 "compatible with type coercions for bool, int, or float.")
 
-            override = None
             try:
-                override = self._clOverrides[self.currentSection][name]
-            except KeyError:
-                # Check the default section too...
-                try:
-                    override = self._clOverrides[self.defaultSection][name]
-                except KeyError:
-                    pass
+                if coercion is bool:
+                    return self.configSpec.getboolean(self.currentSection, name)
+                elif coercion is int:
+                    return self.configSpec.getint(self.currentSection, name)
+                elif coercion is float:
+                    return self.configSpec.getfloat(self.currentSection, name)
+            except ConfigParser.Error, ex:
+                raise self._ConvertToConfigParserError(ex)
 
-            if override is not None:
-                if coercion is None:
-                    return override
-                else:
-                    return coercion(override)
+        if (not getRawValues and len(interpOverrides.keys()) != 0 and
+         not self.allowOverrides):
+            raise ConfigSpecError(OVERRIDES_DISABLED_ERR_STR % 
+             (self.configFile))
 
-        if interpOverrides is None:
-            getRawValues = True
-        else:
-            if not self.allowOverrides and len(interpOverrides.keys()) != 0:
-                raise ConfigSpecError(OVERRIDES_DISABLED_ERR_STR % 
-                 (self.configFile))
-
-            # _And_ we have to do this here so variables that consist of other
-            # (interpolated) variables correctly pick up the overrides specified
-            # in the environment.
-            envCurrentSectionOverrides = {}
-            envDefaultSectionOverrides = {}
+        # _And_ we have to do this here so variables that consist of other
+        # (interpolated) variables correctly pick up the overrides specified
+        # in the environment.
+        envCurrentSectionOverrides = {}
+        envDefaultSectionOverrides = {}
         
-            try:
-                envCurrentSectionOverrides = self._clOverrides[
-                 self.currentSection]
-            except KeyError:
-                pass
-            try:
-                envDefaultSectionOverrides = self._clOverrides[
-                 self.defaultSection]
-            except KeyError:
-                pass
-
-            try:
-                # ORDER MATTERS HERE: 
-                overrides = dict(interpOverrides.items() +
-                                 envDefaultSectionOverrides.items() +
-                                 envCurrentSectionOverrides.items())
-            except TypeError:
-                raise ConfigSpecError("Invalid interpolation overrides "
-                 "specified; must be convertable a dictionary.",
-                 ConfigSpecError.COERCION_TYPE_ERROR)
+        try:
+            envCurrentSectionOverrides = self._clOverrides[self.currentSection]
+        except KeyError:
+            pass
 
         try:
-            if coercion is bool:
-                return self.configSpec.getboolean(self.currentSection, name)
-            elif coercion is int:
-                return self.configSpec.getint(self.currentSection, name)
-            elif coercion is float:
-                return self.configSpec.getfloat(self.currentSection, name)
-            elif coercion is list:
+            envDefaultSectionOverrides = self._clOverrides[self.defaultSection]
+        except KeyError:
+            pass
+
+        try:
+            # ORDER MATTERS HERE: 
+            # the dict() conversion takes the last item if there
+            # is any overlap, so we want the overrides in the following 
+            # order:
+            # -- Passed in to the function
+            # -- Specified as a section override
+            # -- specified as a default section override
+            overrides = dict(envDefaultSectionOverrides.items() +
+                             envCurrentSectionOverrides.items() +
+                             interpOverrides.items())
+        except TypeError:
+            raise ConfigSpecError("Invalid interpolation overrides "
+             "specified; must be convertable a dictionary.",
+             ConfigSpecError.COERCION_TYPE_ERROR)
+
+        if not self.allowOverrides:
+            assert 0 == len(overrides.keys()), ("ConfigSpec variable overrides "
+             "disabled, but slipped in anyway.")
+
+        # We handle these above, but assert it, just in case:
+        assert coercion not in (bool, int, float), ("bool, int, or float "
+         "coercion slipped through?")
+
+        try:
+            if coercion is list:
                 return self.configSpec.get(self.currentSection, name,
                  getRawValues, overrides).split()
             elif coercion is None or coercion is str:
