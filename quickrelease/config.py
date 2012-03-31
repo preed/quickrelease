@@ -121,10 +121,20 @@ class ConfigSpec:
                 overrideSection.strip()
                 overrideName.strip()
 
+                #print "overrideSection: %s" % (overrideSection)
+                #print "overrideName: %s" % (overrideName)
+                #print "overrideValue: %s" % (overrideVal)
+
                 if not self._clOverrides.has_key(overrideSection):
                     self._clOverrides[overrideSection] = {}
 
                 self._clOverrides[overrideSection][overrideName] = overrideVal
+
+        # DBUG
+        #print "Commandline overrides: "
+        #pprint.pprint(self._clOverrides)
+        #print "Initial defaults: "
+        #pprint.pprint(self.GetRawConfig().defaults())
 
     def GetRootDir(self):
         return self.rootDirectory
@@ -175,6 +185,10 @@ class ConfigSpec:
         for key in self.GetRawConfig().defaults().keys():
             if re.match('^PARTNER_', key, re.I):
                 self.GetRawConfig().remove_option(self.GetDefaultSection(), key)
+
+        # DBUG
+        # pprint.pprint(self.GetRawConfig().defaults())
+
     def SetPartnerSection(self, partner):
         if not self.ValidPartner(partner):
             raise ConfigSpecError("Invalid/unknown partner: %s" % (partner))
