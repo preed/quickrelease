@@ -4,6 +4,7 @@
 #
 # Copyright (c) 2010-2011 Pioneers of the Inevitable/Songbird
 # Copyright (c) 2011      J. Paul Reed
+# Copyright (c) 2011-2012 Release Engineering Approaches
 #
 # Permission is hereby granted, free of charge, to any person obtaining a 
 # copy of this software and associated documentation files (the "Software"),

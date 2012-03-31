@@ -12,7 +12,7 @@ setup(
     version = QUICK_RELEASE_VERSION,
 
     author = "J. Paul Reed",
-    author_email = "jpreed@gmail.com",
+    author_email = "preed@releng-approaches.com",
     description = ("A lightweight release harness that aims to provide a "
                    "framework and supporting infrastructure to help define a "
                    "process."),
