@@ -98,7 +98,7 @@ class ConfigSpec:
 
             for o in overrides:
                 try:
-                    if not re.match('^(\w.+:)?[\w\-_]+=[\w\-_\.]+$', o):
+                    if not re.match('^(\w[\w\-_]*:)*[\w\-_]+=[\w\-_\.]+$', o):
                         raise ValueError()
 
                     (overrideKey, overrideVal) = o.split('=')
@@ -107,11 +107,16 @@ class ConfigSpec:
                      % (o))
 
                 overrideSection = overrideName = None
-                try:
-                    (overrideSection, overrideName) = overrideKey.split(":")
-                except ValueError:
+                keyParts = overrideKey.split(
+                 ConfigSpec.CONFIG_SECTION_DELIMETER)
+
+                if 1 == len(keyParts):
                     overrideSection = self.defaultSection
                     overrideName = overrideKey
+                else:
+                    overrideName = keyParts.pop()
+                    overrideSection = ConfigSpec.CONFIG_SECTION_DELIMETER.join(
+                     keyParts)
 
                 overrideSection.strip()
                 overrideName.strip()
@@ -167,26 +172,29 @@ class ConfigSpec:
         self.currentSection = newSection
 
     def _ResetPartnerDefaultSectionVars(self):
-        for sect in self.GetSectionList():
-            if ConfigSpec._IsPartnerSection(sect):
-                for opt in self.GetRawConfig().options(sect):
-                    #print "Option in %s: %s" % (sect, o)
-                    self.GetRawConfig().set(self.GetDefaultSection(),
-                     "PARTNER_%s" % (opt), "")
-    
+        for key in self.GetRawConfig().defaults().keys():
+            if re.match('^PARTNER_', key, re.I):
+                self.GetRawConfig().remove_option(self.GetDefaultSection(), key)
     def SetPartnerSection(self, partner):
         if not self.ValidPartner(partner):
             raise ConfigSpecError("Invalid/unknown partner: %s" % (partner))
 
-        self.SetSection(self._GetPartnerSectionName(partner))
+        partnerSectionName = self._GetPartnerSectionName(partner)
+        self.SetSection(partnerSectionName)
 
         # We do this so different variables from other partner sections don't
-        # polute the default variable namespace
+        # pollute the default variable namespace
         self._ResetPartnerDefaultSectionVars()
 
         for item in self.GetAll():
             self.GetRawConfig().set(self.GetDefaultSection(),
              "PARTNER_%s" % (item[0]), item[1])
+
+        if self._clOverrides.has_key(partnerSectionName):
+            for overrideKey in self._clOverrides[partnerSectionName]:
+                self.GetRawConfig().set(self.GetDefaultSection(),
+                 "PARTNER_%s" % (overrideKey),
+                 self._clOverrides[partnerSectionName][overrideKey])
 
     @staticmethod
     def _GetPartnerSectionName(partnerName):
