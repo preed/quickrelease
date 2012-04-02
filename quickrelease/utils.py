@@ -68,6 +68,15 @@ def Makedirs(path):
         return
     os.makedirs(path)
 
+# May seem weird, but some programs (the Perforce client, most notably) actually
+# look at PWD to figure out their current working directory, not getcwd(3)
+def Chdir(path):
+    oldcwd = os.getcwd()
+    rv = os.chdir(path)
+    os.environ['OLDPWD'] = oldcwd
+    os.environ['PWD'] = path
+    return rv
+
 class ExceptionURLopener(FancyURLopener):
     def __init__(self, *args, **kwargs):
         FancyURLopener.__init__(self, *args, **kwargs)
