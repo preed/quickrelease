@@ -89,13 +89,17 @@ class _OutputQueueReader(Thread):
             if h.handle is not None:
                 h.handle.flush()
 
-    def GetOutput(self, outputType=PIPE_STDOUT):
+    def GetOutput(self, outputType=PIPE_STDOUT, raw=False):
         if not self.collectedOutput.has_key(outputType):
             raise ValueError("No output type %s processed by this output "
              "monitor" % (outputType))
 
-        return list(REMOVE_LINE_ENDING(x.content) for x in
-         self.collectedOutput[outputType])
+        if raw:
+            return ''.join(list(x.content for x in
+             self.collectedOutput[outputType]))
+        else:
+            return list(REMOVE_LINE_ENDING(x.content) for x in
+             self.collectedOutput[outputType])
 
 class RunShellCommandError(ReleaseFrameworkError):
     STDERR_DISPLAY_CONTEXT = 5
@@ -130,6 +134,7 @@ RUN_SHELL_COMMAND_DEFAULT_ARGS = {
  'raiseErrors': True,
  'verbose': False,
  'workdir': None,
+ 'input': None,
 }
 
 # RunShellCommand may seem a bit weird, but that's because it was originally a
@@ -164,10 +169,25 @@ class RunShellCommand(object):
         self._processWasKilled = False
         self._processTimedOut = False
         self._stdout = None
+        self._rawstdout = None
         self._stderr = None
         self._startTime = None
         self._endTime = None
         self._returncode = None
+        self._stdin = None
+
+        if self._input is not None:
+            if type(self._input) is str:
+                try:
+                    self._stdin = open(self._input, 'r')
+                except IOError, ex:
+                    if ex.errno == errno.ENOENT:
+                        raise ValueError("Invalid input stream file: %s" %
+                         (self._input))
+                    else:
+                        raise ex
+            else:
+                self._stdin = self._input
 
         # This makes it so we can pass int, longs, and other types to our
         # RunShellCommand that are easily convertable to strings, but which 
@@ -224,6 +244,7 @@ class RunShellCommand(object):
 
     def _GetCommand(self): return self._command
     def _GetStdout(self): return self._stdout
+    def _GetRawStdout(self): return self._rawstdout
     def _GetStderr(self): return self._stderr
     def _GetStartTime(self): return self._startTime
     def _GetEndTime(self): return self._endTime
@@ -240,6 +261,7 @@ class RunShellCommand(object):
 
     command = property(_GetCommand)
     stdout = property(_GetStdout)
+    rawstdout = property(_GetRawStdout)
     stderr = property(_GetStderr)
     runningtime = property(_GetRunningTime)
     starttime = property(_GetStartTime)
@@ -310,14 +332,27 @@ class RunShellCommand(object):
 
             outputQueue = Queue()
 
+            stdinArg = None
+            if self._input is not None:
+                stdinArg = PIPE
+
             self._startTime = time.time()
-            process = Popen(self._execArray, stdout=PIPE, stderr=PIPE,
-             cwd=self.workdir, bufsize=0)
+            process = Popen(self._execArray, stdin=stdinArg, gstdout=PIPE,
+             stderr=PIPE, cwd=self.workdir, bufsize=0)
             commandLaunched = True
 
+            if self._stdin is not None:
+                #print >> sys.stderr, "Starting stdinWriter"
+                stdinWriter = Thread(target=_WriteInput,
+                 name="RunShellCommand() stdin writer",
+                 args=(self._stdin, process.stdin))
+                stdinWriter.start()
+
             stdoutReader = Thread(target=_EnqueueOutput,
+             name="RunShellCommand() stdout reader",
              args=(process.stdout, outputQueue, PIPE_STDOUT))
             stderrReader = Thread(target=_EnqueueOutput,
+             name="RunShellCommand() stderr reader",
              args=(process.stderr, outputQueue, PIPE_STDERR))
             outputMonitor = _OutputQueueReader(queue=outputQueue,
              logHandleDescriptors=logDescs, printOutput=self._printOutput)
@@ -356,6 +391,9 @@ class RunShellCommand(object):
                 outputMonitor.join()
                 #print >> sys.stderr, "Joining q"
                 outputQueue.join()
+                if stdinWriter is not None:
+                    #print >> sys.stderr, "Joining stdinWriter"
+                    stdinWriter.join()
 
                 for h in logDescs:
                     h.handle.close()
@@ -371,9 +409,15 @@ class RunShellCommand(object):
                 #    print "Line %d time: %s" % (i, outputMonitor.collectedOutput[i]['time'])
 
                 self._stdout = outputMonitor.GetOutput(PIPE_STDOUT)
+                self._rawstdout = outputMonitor.GetOutput(PIPE_STDOUT,
+                 raw=True)
                 self._stderr = outputMonitor.GetOutput(PIPE_STDERR)
                 self._endTime = procEndTime
                 self._returncode = process.returncode
+
+                if self._input is not None and type(self._input) is str:
+                    #print >> sys.stderr, "Closing stdin file."
+                    self._stdin.close()
 
                 if self._raiseErrors and self.returncode:
                     raise RunShellCommandError(self)
@@ -395,6 +439,13 @@ class _LogHandleDesc(object):
         object.__init__(self)
         self.type = outputType
         self.handle = handle
+
+def _WriteInput(inputStream, procStdinPipe):
+    for line in iter(inputStream.readline, ''):
+        assert line is not None, "Line was None"
+        procStdinPipe.write(line)
+
+    procStdinPipe.close()
 
 def _EnqueueOutput(outputPipe, outputQueue, pipeType):
     for line in iter(outputPipe.readline, ''):
