@@ -253,7 +253,7 @@ class ConfigSpec:
         getRawValues = interpOverrides is None
         overrides = None
 
-        if coercion not in (bool, str, int, float, list, None):
+        if coercion not in (bool, str, int, float, list, dict, None):
             raise ConfigSpecError("Invalid coercion type specified: %s" %
              (coercion), ConfigSpecError.COERCION_TYPE_ERROR)
 
@@ -321,15 +321,18 @@ class ConfigSpec:
          "coercion slipped through?")
 
         try:
+            confVal = self.configSpec.get(self.currentSection, name,
+             getRawValues, overrides)
             if coercion is list:
-                return self.configSpec.get(self.currentSection, name,
-                 getRawValues, overrides).split()
+                return confVal.split()
+            elif coercion is dict:
+                return self._ConfStringToDict(confVal)
             elif coercion is None or coercion is str:
-                return self.configSpec.get(self.currentSection, name,
-                 getRawValues, overrides)
-
+                return confVal
         except ConfigParser.Error, ex:
             raise self._ConvertToConfigParserError(ex)
+
+        assert False, "Unreachable (or should be...)"
 
     def _ConvertToConfigParserError(self, err):
         errType = type(err)
@@ -350,3 +353,60 @@ class ConfigSpec:
             return err
         else:
             return ConfigSpecError(err.message, errCode)
+
+    # This method may seem a little convoluted, but to get the type of error
+    # reporting we wanted, we decided to parse the string manually, in two 
+    # phases. A couple of initial impl's were done using regular expressions,
+    # but they didn't provide the information we wanted to be able to report 
+    # to the user about the format error in their config file.
+    def _ConfStringToDict(confStr):
+        retDict = {}
+
+        dictParts = []
+        i = 0
+
+        confStr = confStr.strip()
+        while i < len(confStr):
+            part = confStr[i:]
+            #print part
+            partStart = part.find('[')
+
+            if partStart == -1:
+                raise ConfigSpecError("Malformed dictionary element: %s" %
+                 (part))
+      
+            partEnd = part.find(']', partStart)
+
+            if partEnd == -1:
+                raise ConfigSpecError("Malformed dictionary element2: %s" %
+                 (part))
+     
+            # without brackets
+            #   keyValuePair = dictStr[i + partStart + 1:i + partEnd]
+            # with brackets
+            keyValuePair = confStr[i + partStart:i + partEnd + 1]
+
+            # Ignore empty key/value pairs
+            if len(keyValuePair[1:len(keyValuePair) - 1].strip()) > 0:
+                dictParts.append(keyValuePair)
+            i += partEnd + 1
+
+        for fullKey in dictParts:
+            keyPart = fullKey[1:len(fullKey) - 1]
+            keyPart = keyPart.lstrip()
+
+            keyPartSplit = re.split('\s+', keyPart, 1)
+            keyName = keyPartSplit[0]
+            if len(keyPartSplit) != 2:
+                raise ConfigSpecError("Missing dictionary value for key %s: %s"
+                 % (keyName, fullKey))
+
+            keyValue = keyPartSplit[1].lstrip()
+            if 0 == len(keyValue):
+                raise ConfigSpecError("Missing dictionary value for key %s: %s"
+                 % (keyName, fullKey))
+
+            retDict[keyName] = keyValue
+
+        return retDict
+
