@@ -81,8 +81,6 @@ class ConfigSpec:
                 raise ConfigSpecError("Invalid initial section '%s'" %
                  (self.GetSection()))
 
-        # Need to prefill these in, so they don't blow up, but since
-        # SetActivePartner hasn't been called yet, they're all blank
         self._ResetPartnerDefaultSectionVars()
   
         try:
