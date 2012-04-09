@@ -392,7 +392,7 @@ class RunShellCommand(object):
                 #print >> sys.stderr, "Joining q"
                 outputQueue.join()
                 if stdinWriter is not None:
-                    print >> sys.stderr, "Joining stdinWriter"
+                    #print >> sys.stderr, "Joining stdinWriter"
                     stdinWriter.join()
 
                 for h in logDescs:
