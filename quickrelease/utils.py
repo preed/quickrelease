@@ -66,7 +66,7 @@ def GetBuildPlatform():
 def Makedirs(path):
     if os.path.isdir(path):
         return
-    os.makedirs(path)
+    return os.makedirs(path)
 
 # May seem weird, but some programs (the Perforce client, most notably) actually
 # look at PWD to figure out their current working directory, not getcwd(3)
