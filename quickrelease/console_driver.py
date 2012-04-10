@@ -34,7 +34,7 @@ from quickrelease.exception import ReleaseFrameworkError
 from quickrelease.process import Process, GetAvailableProcessesList, GetProcessByName
 from quickrelease.utils import PrintReleaseFrameworkError
 
-QUICK_RELEASE_VERSION = '0.13.0pre'
+QUICK_RELEASE_VERSION = '0.13.0'
 
 gRootDir = None
 
