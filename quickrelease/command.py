@@ -150,7 +150,8 @@ class RunShellCommand(object):
 
         if len(args) > 0:
              if len(kwargs.keys()) > 0:
-                 raise ValueError("Can't mix initialization styles.")
+                 raise ValueError("RunShellCommand(): Can't mix initialization "
+                  "styles.")
 
              kwargs['command'] = args
 
@@ -337,10 +338,11 @@ class RunShellCommand(object):
                 stdinArg = PIPE
 
             self._startTime = time.time()
-            process = Popen(self._execArray, stdin=stdinArg, gstdout=PIPE,
+            process = Popen(self._execArray, stdin=stdinArg, stdout=PIPE,
              stderr=PIPE, cwd=self.workdir, bufsize=0)
             commandLaunched = True
 
+            stdinWriter = None
             if self._stdin is not None:
                 #print >> sys.stderr, "Starting stdinWriter"
                 stdinWriter = Thread(target=_WriteInput,
