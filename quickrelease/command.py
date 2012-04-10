@@ -72,9 +72,13 @@ class _OutputQueueReader(Thread):
                     continue
 
             if self.printOutput:
-                print REMOVE_LINE_ENDING(lineDesc.content)
-                if not self.bufferedOutput:
-                    sys.stdout.flush()
+                try:
+                    print REMOVE_LINE_ENDING(lineDesc.content)
+                    if not self.bufferedOutput:
+                        sys.stdout.flush()
+                except IOError, ex:
+                    if ex.errno != errno.EPIPE:
+                        raise ex
 
             for h in self.logHandleDescriptors:
                 if h.handle is not None and h.type == lineDesc.type:
@@ -372,15 +376,17 @@ class RunShellCommand(object):
                 else:
                     process.wait()
 
-            except KeyboardInterrupt:
+            except KeyboardInterrupt, ex:
                 process.kill()
                 self._processWasKilled = True
+                raise ex
         except OSError, ex:
             if ex.errno == errno.ENOENT:
                 raise ReleaseFrameworkError("Invalid command or working dir")
             raise ReleaseFrameworkError("OSError: %s" % str(ex), details=ex)
         #except Exception, ex:
         #    print "EX: %s" % (ex)
+        #    raise ex
         finally:
             if commandLaunched:
                 procEndTime = time.time()
@@ -405,10 +411,16 @@ class RunShellCommand(object):
                 if commandLaunched and self.runningtime >= self.timeout:
                     self._processWasKilled = True
                     self._processTimedOut = True
- 
-                #for i in range(len(outputMonitor.collectedOutput)):
-                #    print "Line %d content: %s" % (i, outputMonitor.collectedOutput[i]['content'])
-                #    print "Line %d time: %s" % (i, outputMonitor.collectedOutput[i]['time'])
+
+                #om = outputMonitor.collectedOutput[PIPE_STDOUT]
+                #for i in range(om):
+                #    print "STDOUT line %d (%d): %s" % (i, om[i].time,
+                #     om[i].content)
+                #
+                #om = outputMonitor.collectedOutput[PIPE_STDERR]
+                # for i in range(om):
+                #     print "STDERR line %d (%d): %s" % (i, om[i].time,
+                #      om[i].content)
 
                 self._stdout = outputMonitor.GetOutput(PIPE_STDOUT)
                 self._rawstdout = outputMonitor.GetOutput(PIPE_STDOUT,
@@ -421,8 +433,8 @@ class RunShellCommand(object):
                     #print >> sys.stderr, "Closing stdin file."
                     self._stdin.close()
 
-                if self._raiseErrors and self.returncode:
-                    raise RunShellCommandError(self)
+        if self._raiseErrors and self.returncode:
+            raise RunShellCommandError(self)
 
 def _CheckRunShellCommandArg(argType):
     if argType not in (str, unicode, int, float, list, long):
