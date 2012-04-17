@@ -28,6 +28,6 @@ class ReleaseFrameworkErrorCollection(ReleaseFrameworkError):
         errorStrs = list(str(x) for x in self._errorGroup)
         return "Release Framework Errors:\n\t%s" % '\n\t'.join(errorStrs)
 
-    def append(releaseFrameworkError):
+    def append(self, releaseFrameworkError):
         self._errorGroup.append(releaseFrameworkError)
         self._explanation = str(self)
