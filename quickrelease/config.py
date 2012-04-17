@@ -162,7 +162,7 @@ class ConfigSpec(object):
         try:
             return list(x[0] for x in self.rawConfig.items(sectionName))
         except ConfigParser.Error, ex:
-            raise self._ConvertToConfigParserError(ex)
+            raise ConfigSpec._ConvertToConfigParserError(ex)
 
     def GetSectionElements(self, sectionName=None):
         if sectionName is None:
@@ -172,7 +172,7 @@ class ConfigSpec(object):
         try:
             return self.rawConfig.items(sectionName)
         except ConfigParser.Error, ex:
-            raise self._ConvertToConfigParserError(ex)
+            raise ConfigSpec._ConvertToConfigParserError(ex)
                              
     rootDir = property(_GetRootDir)
     configFile = property(_GetConfigFile)
@@ -274,7 +274,7 @@ class ConfigSpec(object):
                 elif coercion is float:
                     return self.rawConfig.getfloat(self.section, name)
             except ConfigParser.Error, ex:
-                raise self._ConvertToConfigParserError(ex)
+                raise ConfigSpec._ConvertToConfigParserError(ex)
 
         if (not getRawValues and len(interpOverrides.keys()) != 0 and
          not self._allowOverrides):
@@ -328,15 +328,16 @@ class ConfigSpec(object):
             if coercion is list:
                 return confVal.split()
             elif coercion is dict:
-                return self._ConfStringToDict(confVal)
+                return ConfigSpec._ConfStringToDict(confVal)
             elif coercion is None or coercion is str:
                 return confVal
         except ConfigParser.Error, ex:
-            raise self._ConvertToConfigParserError(ex)
+            raise ConfigSpec._ConvertToConfigParserError(ex)
 
         assert False, "Unreachable (or should be...)"
 
-    def _ConvertToConfigParserError(self, err):
+    @staticmethod
+    def _ConvertToConfigParserError(err):
         errType = type(err)
         errCode = None
 
@@ -361,6 +362,7 @@ class ConfigSpec(object):
     # phases. A couple of initial impl's were done using regular expressions,
     # but they didn't provide the information we wanted to be able to report 
     # to the user about the format error in their config file.
+    @staticmethod
     def _ConfStringToDict(confStr):
         retDict = {}
 
