@@ -7,6 +7,7 @@ import os
 import re
 import sys
 
+from quickrelease.config import ConfigSpec
 from quickrelease.step import Step
 from quickrelease.exception import ReleaseFrameworkError
 from quickrelease.utils import ImportModule, PrintReleaseFrameworkError
@@ -58,24 +59,24 @@ class Process(object):
         object.__init__(self)
 
         # initialize these if the subclass didn't
-        if 'stepNames' not in dir(self):
-            self.stepNames = None
+        #if 'stepNames' not in dir(self):
         if 'steps' not in dir(self):
             self.steps = ()
 
         # default attributes
-        self.config = None
-        self.executeSteps = True
-        self.verifySteps = True
-        self.ignoreErrors = False
-        self.everHadErrors = False
-        self.enableNotifications = False
+        self._config = None
+        self._executeSteps = True
+        self._verifySteps = True
+        self._ignoreErrors = False
+        self._everHadErrors = False
+        self._enableNotifications = False
+        self._stepNames = None
 
         for arg in Process.RECOGNIZED_CONSTRUCTOR_ARGS:
             if kwargs.has_key(arg):
-                setattr(self, arg, kwargs[arg])
+                setattr(self, '_' + arg, kwargs[arg])
 
-        assert self.executeSteps is True or self.verifySteps is True, (
+        assert self._executeSteps is True or self._verifySteps is True, (
          "Neither executeSteps, nor verifySteps was requested; NOTHING TO DO!")
 
     # The default string representation for process steps is the name
@@ -86,25 +87,22 @@ class Process(object):
     def __cmp__(self, other):
         return cmp(str(self), str(other))
 
-    def GetConfig(self):
-        return self.config
+    def _GetConfig(self): return self._config
+    def _HadErrors(self): return self._everHadErrors
 
-    def HadErrors(self):
-        return self.everHadErrors
-
-    def GetProcessStepNames(self):
-        if self.stepNames is None:
-            self.stepNames = []
+    def _GetProcessStepNames(self):
+        if self._stepNames is None:
+            self._stepNames = []
 
             for s in self.steps:
                 assert issubclass(s, Step), ("Process steps "
                  "must be derived from the Step class (step %s is not)" %
                  (s.__name__))
-                self.stepNames.append(s.__name__)
+                self._stepNames.append(s.__name__)
 
-        return tuple(self.stepNames)
+        return tuple(self._stepNames)
 
-    def GetProcessSteps(self):
+    def _GetProcessSteps(self):
         steps = []
         for s in self.steps:
             stepInstance = s(process=self)
@@ -116,8 +114,13 @@ class Process(object):
 
         return tuple(steps)
 
+    config = property(_GetConfig)
+    errored = property(_HadErrors)
+    processStepNames = property(_GetProcessStepNames)
+    processSteps = property(_GetProcessSteps)
+
     def RunProcess(self, startingStepName=None, stepsToRun=None):
-        processSteps = self.GetProcessSteps()
+        processSteps = self.processSteps
 
         startNdx = 0
 
@@ -139,33 +142,33 @@ class Process(object):
             endNdx = startNdx + stepsToRun
 
         for step in processSteps[startNdx:endNdx]:
-            os.chdir(self.GetConfig().GetRootDir())
-            self.GetConfig().SetSection(self.GetConfig().GetDefaultSection())
+            os.chdir(self.config.rootDir)
+            self.config.section = ConfigSpec.DEFAULT_SECTION
             self.PerformStep(step)
 
     def PerformStep(self, stepObj):
         try:
-            rootDir = self.GetConfig().GetRootDir()
+            rootDir = self.config.rootDir
             stepRunner = stepObj.runner
 
             os.chdir(rootDir)
             stepRunner.DoPreflight(stepObj)
 
-            if self.executeSteps:
+            if self._executeSteps:
                 os.chdir(rootDir)
                 stepRunner.DoExecute(stepObj)
 
-            if self.verifySteps:
+            if self._verifySteps:
                 os.chdir(rootDir)
                 stepRunner.DoVerify(stepObj)
 
-            if self.enableNotifications:
+            if self._enableNotifications:
                 os.chdir(rootDir)
                 stepRunner.DoNotify(stepObj)
 
         except ReleaseFrameworkError, ex:
-            self.everHadErrors = True
-            if self.ignoreErrors:
+            self._everHadErrors = True
+            if self._ignoreErrors:
                 PrintReleaseFrameworkError(ex)
             else:
                 raise ex

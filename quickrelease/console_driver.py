@@ -31,7 +31,7 @@ import sys
 
 from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
-from quickrelease.process import Process, GetAvailableProcessesList, GetProcessByName
+from quickrelease.process import GetAvailableProcessesList, GetProcessByName
 from quickrelease.utils import PrintReleaseFrameworkError
 
 QUICK_RELEASE_VERSION = '0.14.0pre'
@@ -97,7 +97,7 @@ def main():
                      options.process)
                     return -1
 
-                processStepNames = process.GetProcessStepNames()
+                processStepNames = process.processStepNames
 
                 print "Steps for the %s process:" % (str(process))
                 for i in range(len(processStepNames)):
@@ -165,7 +165,7 @@ def main():
             processToRun.RunProcess(startingStepName=options.startAt,
              stepsToRun=stepsToRun)
 
-            processHadErrors = processToRun.HadErrors()
+            processHadErrors = processToRun.errored
         except ValueError, ex:
             print >> sys.stderr, ex
             return -1

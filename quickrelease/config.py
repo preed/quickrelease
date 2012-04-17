@@ -26,8 +26,8 @@ OVERRIDES_DISABLED_ERR_STR = ("Commandline variable overrides are not enabled "
  "in config file %s; enable them by setting 'allow_config_overrides' in the "
  "default section.")
 
-class ConfigSpec:
-    DEFAULT_STARTING_SECTION = 'DEFAULT'
+class ConfigSpec(object):
+    DEFAULT_SECTION = 'DEFAULT'
     CONFIG_SECTION_DELIMETER = ':'
     DELIV_SECTION_PREFIX = 'deliverable'
     PARTNER_SECTION_PREFIX = 'partner'
@@ -52,46 +52,45 @@ class ConfigSpec:
         return constants.QUICKRELEASE_CONSTANTS.keys()
 
     def __init__(self, configFile, rootDir=os.getcwd(),
-     section=DEFAULT_STARTING_SECTION, overrides=()):
+     section=DEFAULT_SECTION, overrides=()):
 
         if configFile is None:
             raise ConfigSpecError("No config file specified.")
         elif not os.path.isfile(configFile):
             raise ConfigSpecError("Invalid config file specified.")
 
-        self.configFile = configFile
-        self.configSpec = ConfigParser.SafeConfigParser()
-        self.rootDirectory = rootDir
-        self.currentSection = section
-        self.defaultSection = section
+        self._configFile = configFile
+        self._configSpec = ConfigParser.SafeConfigParser()
+        self._rootDir = rootDir
+        self._currentSection = section
 
-        # Overrides are not allowed by default.
-        self.allowOverrides = False
+        # By default, overrides are not allowed.
+        self._allowOverrides = False
 
         # Override hash given from the commandline (i.e. -D)
         self._clOverrides = {}
 
         try:
-            self.configSpec.read(configFile)
+            self._configSpec.read(configFile)
         except ConfigParser.Error, ex:
-            raise self._ConvertToConfigParserError(ex)
+            raise ConfigSpec._ConvertToConfigParserError(ex)
 
-        if section != ConfigSpec.DEFAULT_STARTING_SECTION:
-            if self.GetSection() not in self.GetSectionList():
+        if section != ConfigSpec.DEFAULT_SECTION:
+            if self.section not in self.sectionList:
                 raise ConfigSpecError("Invalid initial section '%s'" %
-                 (self.GetSection()))
+                 (section))
 
         self._ResetPartnerDefaultSectionVars()
   
         try:
-            self.allowOverrides = self.SectionGet(self.GetDefaultSection(),
+            self._allowOverrides = self.SectionGet(ConfigSpec.DEFAULT_SECTION,
              'allow_config_overrides', bool)
         except ConfigSpecError, ex:
             if ConfigSpecError.NO_OPTION_ERROR != ex.details:
                 raise ex
 
         if len(overrides) != 0:
-            if not self.allowOverrides:
+            if not self._allowOverrides:
                 raise ConfigSpecError(OVERRIDES_DISABLED_ERR_STR % (configFile))
 
             for o in overrides:
@@ -109,7 +108,7 @@ class ConfigSpec:
                  ConfigSpec.CONFIG_SECTION_DELIMETER)
 
                 if 1 == len(keyParts):
-                    overrideSection = self.defaultSection
+                    overrideSection = ConfigSpec.DEFAULT_SECTION
                     overrideName = overrideKey
                 else:
                     overrideName = keyParts.pop()
@@ -134,77 +133,77 @@ class ConfigSpec:
         #print "Initial defaults: "
         #pprint.pprint(self.GetRawConfig().defaults())
 
-    def GetRootDir(self):
-        return self.rootDirectory
+    def _GetRootDir(self): return self._rootDir
+    def _GetRawConfig(self): return self._configSpec
+    def _GetConfigFile(self): return self._configFile
+    def _GetSection(self): return self._currentSection
+    def _GetSectionList(self): return self.rawConfig.sections()
 
-    def GetRawConfig(self):
-        return self.configSpec
-    
-    def GetSectionList(self):
-        return self.configSpec.sections()
+    def _SetSection(self, newSection):
+        newSection = newSection.strip()
+        if self.section == newSection:
+            return
 
-    def GetSection(self):
-        return self.currentSection
+        if (newSection.lower() != ConfigSpec.DEFAULT_SECTION.lower() and
+         (not self.rawConfig.has_section(newSection))):
+            raise ConfigSpecError("Non-existent config spec section: %s" %
+             (newSection), ConfigSpecError.NO_SECTION_ERROR)
+        self._currentSection = newSection
 
     def GetSectionItems(self, sectionName=None):
         if sectionName is None:
-            sectionName = self.currentSection
+            sectionName = self.section
 
         # TODO: include overrides
         try:
-            return list(x[0] for x in self.GetRawConfig().items(sectionName))
+            return list(x[0] for x in self.rawConfig.items(sectionName))
         except ConfigParser.Error, ex:
             raise self._ConvertToConfigParserError(ex)
 
-    def GetAll(self, sectionName=None):
+    def GetSectionElements(self, sectionName=None):
         if sectionName is None:
-            sectionName = self.currentSection
+            sectionName = self.section
 
         # TODO: include overrides
         try:
-            return self.GetRawConfig().items(sectionName)
+            return self.rawConfig.items(sectionName)
         except ConfigParser.Error, ex:
             raise self._ConvertToConfigParserError(ex)
-
-    def GetDefaultSection(self):
-        return self.defaultSection
-
-    def SetSection(self, newSection):
-        if self.GetSection() == newSection:
-            return
-
-        if (newSection.lower() != 'default' and
-         (not self.configSpec.has_section(newSection))):
-            raise ConfigSpecError("Non-existent config spec section: %s" %
-             (newSection), 'INVALID_SECTION')
-        self.currentSection = newSection
+                             
+    rootDir = property(_GetRootDir)
+    configFile = property(_GetConfigFile)
+    rawConfig = property(_GetRawConfig)
+    section = property(_GetSection, _SetSection)
+    sectionList = property(_GetSectionList)
+    sectionItems = property(GetSectionItems)
+    sectionElements = property(GetSectionElements)
 
     def _ResetPartnerDefaultSectionVars(self):
-        for key in self.GetRawConfig().defaults().keys():
+        for key in self.rawConfig.defaults().keys():
             if re.match('^PARTNER_', key, re.I):
-                self.GetRawConfig().remove_option(self.GetDefaultSection(), key)
+                self.rawConfig.remove_option(ConfigSpec.DEFAULT_SECTION, key)
 
         # DBUG
-        # pprint.pprint(self.GetRawConfig().defaults())
+        # pprint.pprint(self.rawConfig.defaults())
 
     def SetPartnerSection(self, partner):
         if not self.ValidPartner(partner):
             raise ConfigSpecError("Invalid/unknown partner: %s" % (partner))
 
         partnerSectionName = self._GetPartnerSectionName(partner)
-        self.SetSection(partnerSectionName)
+        self.section = partnerSectionName
 
         # We do this so different variables from other partner sections don't
         # pollute the default variable namespace
         self._ResetPartnerDefaultSectionVars()
 
-        for item in self.GetAll():
-            self.GetRawConfig().set(self.GetDefaultSection(),
+        for item in self.sectionElements:
+            self.rawConfig.set(ConfigSpec.DEFAULT_SECTION,
              "PARTNER_%s" % (item[0]), item[1])
 
         if self._clOverrides.has_key(partnerSectionName):
             for overrideKey in self._clOverrides[partnerSectionName]:
-                self.GetRawConfig().set(self.GetDefaultSection(),
+                self.rawConfig.set(ConfigSpec.DEFAULT_SECTION,
                  "PARTNER_%s" % (overrideKey),
                  self._clOverrides[partnerSectionName][overrideKey])
 
@@ -225,10 +224,10 @@ class ConfigSpec:
 
     def ValidDeliverable(self, deliverable):
         return (self._GetDeliverableSectionName(deliverable) in
-         self.GetSectionList())
+         self.sectionList)
 
     def ValidPartner(self, partner):
-        return self._GetPartnerSectionName(partner) in self.GetSectionList()
+        return self._GetPartnerSectionName(partner) in self.sectionList
 
     def PartnerGet(self, partner, name, coercion=None, interpolation={}):
         return self.SectionGet(self._GetPartnerSectionName(partner),
@@ -237,13 +236,13 @@ class ConfigSpec:
                                       interpolation)
 
     def SectionGet(self, section, name, coercion=None, interpOverrides={}):
-        origSection = self.GetSection()
+        origSection = self.section
 
         try:
-            self.SetSection(section)
+            self.section = section
             value = self.Get(name, coercion, interpOverrides)
         finally:
-            self.SetSection(origSection)
+            self.section = origSection
 
         return value
 
@@ -265,16 +264,16 @@ class ConfigSpec:
 
             try:
                 if coercion is bool:
-                    return self.configSpec.getboolean(self.currentSection, name)
+                    return self.rawConfig.getboolean(self.section, name)
                 elif coercion is int:
-                    return self.configSpec.getint(self.currentSection, name)
+                    return self.rawConfig.getint(self.section, name)
                 elif coercion is float:
-                    return self.configSpec.getfloat(self.currentSection, name)
+                    return self.rawConfig.getfloat(self.section, name)
             except ConfigParser.Error, ex:
                 raise self._ConvertToConfigParserError(ex)
 
         if (not getRawValues and len(interpOverrides.keys()) != 0 and
-         not self.allowOverrides):
+         not self._allowOverrides):
             raise ConfigSpecError(OVERRIDES_DISABLED_ERR_STR % 
              (self.configFile))
 
@@ -285,12 +284,13 @@ class ConfigSpec:
         envDefaultSectionOverrides = {}
         
         try:
-            envCurrentSectionOverrides = self._clOverrides[self.currentSection]
+            envCurrentSectionOverrides = self._clOverrides[self.section]
         except KeyError:
             pass
 
         try:
-            envDefaultSectionOverrides = self._clOverrides[self.defaultSection]
+            envDefaultSectionOverrides = self._clOverrides[
+             ConfigSpec.DEFAULT_SECTION]
         except KeyError:
             pass
 
@@ -310,7 +310,7 @@ class ConfigSpec:
              "specified; must be convertable a dictionary.",
              ConfigSpecError.COERCION_TYPE_ERROR)
 
-        if not self.allowOverrides:
+        if not self._allowOverrides:
             assert 0 == len(overrides.keys()), ("ConfigSpec variable overrides "
              "disabled, but slipped in anyway.")
 
@@ -319,8 +319,8 @@ class ConfigSpec:
          "coercion slipped through?")
 
         try:
-            confVal = self.configSpec.get(self.currentSection, name,
-             getRawValues, overrides)
+            confVal = self.rawConfig.get(self.section, name, getRawValues,
+             overrides)
             if coercion is list:
                 return confVal.split()
             elif coercion is dict:

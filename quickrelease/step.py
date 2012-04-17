@@ -4,7 +4,7 @@
 import os
 
 from quickrelease.exception import ReleaseFrameworkError, ReleaseFrameworkErrorCollection
-from quickrelease.utils import GetActivePartnerList, PrintReleaseFrameworkError
+from quickrelease.utils import GetActivePartners, PrintReleaseFrameworkError
 
 class StepError(ReleaseFrameworkError):
     def __init__(self, stepObj, errStr, *args, **kwargs):
@@ -41,28 +41,28 @@ class StandardStepRunner(object):
 class Step(object):
     def __init__(self, *args, **kwargs):
         object.__init__(self)
-        self.parentProcess = None
+        self._parentProcess = None
         self._runner = StandardStepRunner()
 
         if kwargs.has_key('process'):
-            self.parentProcess =  kwargs['process']
+            self._parentProcess =  kwargs['process']
 
         if kwargs.has_key('runner'):
             self._runner = kwargs['runner']
 
-    def _GetRunner(self): return self._runner
-    runner = property(_GetRunner)
-
     def __str__(self):
         return self.__class__.__name__ 
 
-    def GetConfig(self):
-        if self.GetParentProcess() is None:
+    def _GetRunner(self): return self._runner
+    def _GetParentProcess(self): return self._parentProcess
+    def _GetConfig(self):
+        if self.process is None:
             return None
-        return self.GetParentProcess().GetConfig()
+        return self.process.config
 
-    def GetParentProcess(self):
-        return self.parentProcess
+    runner = property(_GetRunner)
+    config = property(_GetConfig)
+    process = property(_GetParentProcess) 
 
     def Preflight(self):
         pass
@@ -90,14 +90,14 @@ class PartnerStepRunner(object):
         object.__init__(self)
 
     def _RunPartnerStepMethod(self, stepObj, methodName):
-        conf = stepObj.GetConfig()
-        rootDir = conf.GetRootDir()
+        conf = stepObj.config
+        rootDir = conf.rootDir
         errors = []
 
         for p in GetActivePartnerList(conf):
             try:
                 os.chdir(rootDir)
-                stepObj.SetActivePartner(p)
+                stepObj.activePartner = p
                 stepMethod = getattr(stepObj, methodName)
                 stepMethod()
             except ReleaseFrameworkError, ex:
@@ -127,10 +127,11 @@ class PartnerStep(Step):
     def __init__(self, *args, **kwargs):
         Step.__init__(self, *args, **kwargs)
         self._runner = PartnerStepRunner()
-        self.activePartner = None
+        self._activePartner = None
+        self._partnerData = {}
+
         self.autoSetPartnerConfig = True
         self.haltOnFirstError = False
-        self._partnerData = {}
 
         if kwargs.has_key('auto_set_partner_config'):
             self.autoSetPartnerConfig = kwargs['auto_set_partner_config']
@@ -138,27 +139,25 @@ class PartnerStep(Step):
         if kwargs.has_key('halt_on_first_error'):
             self.haltOnFirstError = kwargs['halt_on_first_error']
 
-    def AutoSetPartnerConfig(self):
-        return self.autoSetPartnerConfig
+    def _GetActivePartner(self): return self._activePartner
 
-    def GetActivePartner(self):
-        return self.activePartner
-
-    def SetActivePartner(self, partner):
-        if partner not in GetActivePartnerList(self.GetConfig()):
+    def _SetActivePartner(self, partner):
+        if partner not in GetActivePartnerList(self.config):
             raise self.SimpleStepError("Unknown partner '%s'" % (partner))
 
-        self.activePartner = partner
+        self._activePartner = partner
 
-        if self.AutoSetPartnerConfig():
-            self.GetConfig().SetPartnerSection(partner)
+        if self.autoSetPartnerConfig:
+            self.config.SetPartnerSection(partner)
 
         if partner not in self._partnerData.keys():
             self._partnerData[partner] = {}
 
+    activePartner = property(_GetActivePartner, _SetActivePartner)
+
     def Save(self, key, data):
-        self._partnerData[self.GetActivePartner()][key] = data
+        self._partnerData[self.activePartner][key] = data
 
     def Load(self, key):
-        return self._partnerData[self.GetActivePartner()][key]
+        return self._partnerData[self.activePartner][key]
 

@@ -9,7 +9,6 @@ import sys
 from urllib import FancyURLopener
 
 from quickrelease.config import ConfigSpec, ConfigSpecError
-from quickrelease.exception import ReleaseFrameworkError
 
 def PrintReleaseFrameworkError(ex):
     sys.stdout.flush()
@@ -21,7 +20,7 @@ def GetDeliverableRootPath(configSpec):
     return os.path.join(configSpec.Get('root_dir'),
      configSpec.SectionGet('deliverables', 'release_deliverables_dir'))
 
-def GetActivePartnerList(configSpec):
+def GetActivePartners(configSpec):
     partners = configSpec.Get('active_partners', list)
     for p in partners:
         assert configSpec.ValidPartner(p), ("Invalid partner '%s' specified in " 
@@ -29,9 +28,9 @@ def GetActivePartnerList(configSpec):
 
     return partners
 
-def GetAllPartnerList(configSpec):
+def GetAllPartners(configSpec):
     partners = []
-    for s in configSpec.GetSectionList():
+    for s in configSpec.sectionList:
         # TODO: make 'partner:' a constant, not a string
         partnerMatch = re.match('^partner:(\w+)$', s)
         if partnerMatch:

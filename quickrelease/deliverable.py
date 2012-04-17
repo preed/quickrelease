@@ -37,47 +37,48 @@ class Deliverable(object):
             raise ValueError("Non-existent deliverable class passed to "
              "Deliverable constructor: %s" % deliverableClass)
 
-        self.configSection = DeliverableSectionNameFromClass(deliverableClass)
-        self.deliverableClass = deliverableClass
-        self.queriedDeliverableClass = None
-        self.file = deliverableFile
-        self.regex = None
-        self.name = None
-        self.filterAttributes = None
-        self.attributes = []
-        self.attributeHandlers = {}
+        self._configSection = DeliverableSectionNameFromClass(deliverableClass)
+        self._deliverableClass = deliverableClass
+        self._queriedDeliverableClass = None
+        self._file = deliverableFile
+        self._regex = None
+        self._name = None
+        self._filterAttributes = None
+        self._attributes = []
+        self._attributeHandlers = {}
 
-        deliverableSectionItems = config.GetSectionItems(self.configSection)
+        deliverableSectionItems = config.GetSectionItems(self._configSection)
 
         if 'name' in deliverableSectionItems:
-            self.name = config.SectionGet(self.configSection, 'name').strip()
+            self._name = config.SectionGet(self._configSection, 'name').strip()
 
         if 'regex' in deliverableSectionItems:
-            self.regex = config.SectionGet(self.configSection, 'regex').strip()
+            self._regex = config.SectionGet(self._configSection,
+             'regex').strip()
 
         if self.regex is None and self.name is None:
             raise ConfigSpecError(self.ERROR_STR_NEED_NAME_OR_REGEX %
-             (deliverableClass))
+             (self._deliverableClass))
 
         if 'attributes' in deliverableSectionItems:
-            self.attributes = config.SectionGet(self.configSection,
+            self._attributes = config.SectionGet(self._configSection,
              'attributes', list)
 
-        for attr in self.attributes:
+        for attr in self._attributes:
             attributeValue = None
             attributeType = None
 
             if ('attrib_%s_handler' % (attr)) in deliverableSectionItems:
                 attributeType = Deliverable.ATTRIB_TYPE_CALLBACK
-                attributeValue = config.SectionGet(self.configSection,
+                attributeValue = config.SectionGet(self._configSection,
                  'attrib_%s_handler' % (attr))
             elif ('attrib_%s_regex' % (attr)) in deliverableSectionItems:
                 attributeType = Deliverable.ATTRIB_TYPE_REGEX
-                attributeValue = config.SectionGet(self.configSection,
+                attributeValue = config.SectionGet(self._configSection,
                  'attrib_%s_regex' % (attr))
             elif ('attrib_%s_value' % (attr)) in deliverableSectionItems:
                 attributeType = Deliverable.ATTRIB_TYPE_VALUE
-                attributeValue = config.SectionGet(self.configSection,
+                attributeValue = config.SectionGet(self._configSection,
                  'attrib_%s_value' % (attr))
             else:
                 raise ConfigSpecError("Deliverable class '%s' defines "
@@ -101,7 +102,7 @@ class Deliverable(object):
                         raise ConfigSpecError("Deliverable class '%s' defines "
                          "an attribute callback handler for attribute '%s', "
                          "but the callback is undefined: %s" % (
-                         self.deliverableClass, attr, str(ex)))
+                         self._deliverableClass, attr, str(ex)))
 
             elif (attributeType == Deliverable.ATTRIB_TYPE_REGEX or
              attributeType == Deliverable.ATTRIB_TYPE_VALUE):
@@ -111,7 +112,7 @@ class Deliverable(object):
                 if attributeType == Deliverable.ATTRIB_TYPE_REGEX:
                     regexFlags = 0
                     try:
-                        regexFlagsStr = config.SectionGet(self.configSection,
+                        regexFlagsStr = config.SectionGet(self._configSection,
                          'regexflags').strip()
                         regexFlags = eval(regexFlagsStr) 
                     except ConfigSpecError, ex:
@@ -123,10 +124,10 @@ class Deliverable(object):
                 assert False, "Unknown attribute handler type: %s" % (
                  attributeType)
 
-            self.attributeHandlers[attr] = attributeHandlerDescriptor
+            self._attributeHandlers[attr] = attributeHandlerDescriptor
 
         if 'filter_attributes' in deliverableSectionItems:
-            self.filterAttributes = config.SectionGet(self.configSection,
+            self.filterAttributes = config.SectionGet(self._configSection,
              'filter_attributes', list)
 
         if self.filterAttributes is not None:
@@ -136,49 +137,46 @@ class Deliverable(object):
                      "invalid filter attribute '%s'" % (deliverableClass, fa))
 
     def __rep__(self):
-        return "<class %s: %s (%s)>" % (self.__class__, self.GetName(),
-         self.GetLocation())
+        return "<class %s: %s (%s)>" % (self.__class__, self.name,
+         self.fileName)
 
     def __str__(self):
-        return self.GetLocation()
+        return self.fileName
 
-    def GetName(self):
-        return self.deliverableClass
+    def _GetName(self): return self._deliverableClass
+    def _GetQueriedName(self): return self._queriedDeliverableClass
+    def _GetLocation(self): return self._file
+    def _GetFileName(self): return os.path.basename(self.fileName)
+    def _GetRegex(self): return self._regex
+    def _GetAttributes(self): return tuple(self._attributes)
 
-    def GetQueriedName(self):
-        return self.queriedDeliverableClass
-
-    def GetLocation(self):
-        return self.file
-
-    def GetFileName(self):
-        return os.path.basename(self.GetLocation())
-
-    def GetRegex(self):
-        return self.regex
-
-    def GetFilterAttributes(self):
+    def _GetFilterAttributes(self):
         if self.filterAttributes is None:
             return None
         else:
-            return tuple(self.filterAttributes)
+            return tuple(self._filterAttributes)
 
-    def GetAttributes(self):
-        return tuple(self.attributes)
+    name = property(_GetName)
+    queriedName = property(_GetQueriedName)
+    fileName = property(_GetLocation)
+    file = property(_GetFileName)
+    regex = property(_GetRegex)
+    attributes = property(_GetAttributes)
+    filterAttributes = property(_GetFilterAttributes)
 
     def GetAttribute(self, attribute):
         if attribute not in self.attributes:
             raise ValueError("Deliverable class '%s' has no attribute '%s" %
-             (self.GetName(), attribute))
+             (self.name, attribute))
 
-        handlerType = self.attributeHandlers[attribute]['type']
+        handlerType = self._attributeHandlers[attribute]['type']
   
         if handlerType == Deliverable.ATTRIB_TYPE_VALUE:
-            return self.attributeHandlers[attribute]['handler']
+            return self._attributeHandlers[attribute]['handler']
         elif handlerType == Deliverable.ATTRIB_TYPE_REGEX:
             attribMatch = re.search(
-             self.attributeHandlers[attribute]['handler'], self.GetFileName(),
-             self.attributeHandlers[attribute]['regexFlags'])
+             self._attributeHandlers[attribute]['handler'], self.fileName,
+             self._attributeHandlers[attribute]['regexFlags'])
 
             if attribMatch is None:
                 return None
@@ -187,7 +185,7 @@ class Deliverable(object):
             else:
                 return attribMatch.groups()
         elif handlerType == Deliverable.ATTRIB_TYPE_CALLBACK:
-            return self.attributeHandlers[attribute]['handler'](self)
+            return self._attributeHandlers[attribute]['handler'](self)
         else:
             assert False, "Unknown attribute handler type: %s" % (handlerType)
 
@@ -417,7 +415,7 @@ def FlushDeliverableCache(deliverableDir=None):
 def GetDeliverableSections(config):
     retSections = []
 
-    for section in config.GetSectionList():
+    for section in config.sectionList:
         if IsDeliverableSectionName(section):
             retSections.append(section)
 
