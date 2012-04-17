@@ -54,9 +54,13 @@ class ConfigSpec(object):
     def __init__(self, configFile, rootDir=os.getcwd(),
      section=DEFAULT_SECTION, overrides=()):
 
-        if configFile is None:
-            raise ConfigSpecError("No config file specified.")
-        elif not os.path.isfile(configFile):
+        # We have to error check this ourselves because the ConfigParser class
+        # doesn't (this is a feature!)
+        try:
+            if not os.path.isfile(configFile):
+                raise ConfigSpecError("Specified config file '%s' missing." %
+                 (configFile))
+        except TypeError:
             raise ConfigSpecError("Invalid config file specified.")
 
         self._configFile = configFile
