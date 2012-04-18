@@ -119,7 +119,7 @@ class Process(object):
     processStepNames = property(_GetProcessStepNames)
     processSteps = property(_GetProcessSteps)
 
-    def RunProcess(self, startingStepName=None, stepsToRun=None):
+    def Run(self, startingStepName=None, stepsToRun=None):
         processSteps = self.processSteps
 
         startNdx = 0
@@ -144,9 +144,9 @@ class Process(object):
         for step in processSteps[startNdx:endNdx]:
             os.chdir(self.config.rootDir)
             self.config.section = ConfigSpec.DEFAULT_SECTION
-            self.PerformStep(step)
+            self._PerformStep(step)
 
-    def PerformStep(self, stepObj):
+    def _PerformStep(self, stepObj):
         try:
             rootDir = self.config.rootDir
             stepRunner = stepObj.runner
