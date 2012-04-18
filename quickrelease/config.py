@@ -46,6 +46,8 @@ class ConfigSpecError(ReleaseFrameworkError):
     """See L{ConfigParser.NoSectionError}"""
     PARSE_ERROR = 5
     """See L{ConfigParser.ParsingError}"""
+    NO_CONSTANT_ERROR = 6
+    """The constant name requested is not defined."""
 
     def __init__(self, errorStr, details=None):
          ReleaseFrameworkError.__init__(self, errorStr, details)
@@ -97,15 +99,16 @@ class ConfigSpec(object):
         value = os.getenv(name)
 
         if value is not None:
-            if name in constants.CONSTANTS_FROM_ENV_HANDLERS:
+            if name in constants.CONSTANTS_FROM_ENV_HANDLERS.keys():
                 return constants.CONSTANTS_FROM_ENV_HANDLERS[name](value)
             else:
                 return value
 
-        if name in constants.QUICKRELEASE_CONSTANTS:
+        if name in ConfigSpec.GetDefinedConstants():
             return constants.QUICKRELEASE_CONSTANTS[name]
 
-        raise ConfigSpecError("Undefined constant '%s'" % (name))
+        raise ConfigSpecError("Undefined constant '%s'" % (name),
+         ConfigSpecError.NO_CONSTANT_ERROR)
 
     @staticmethod
     def GetDefinedConstants():
@@ -256,6 +259,7 @@ class ConfigSpec(object):
             raise ConfigSpecError("Non-existent config spec section: %s" %
              (newSection), ConfigSpecError.NO_SECTION_ERROR)
         self._currentSection = newSection
+        self._ResetPartnerDefaultSectionVars()
 
     def GetSectionItems(self, sectionName=None):
         """
