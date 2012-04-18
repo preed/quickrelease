@@ -1,6 +1,26 @@
 # ex:ts=4:sw=4:sts=4:et
 # -*- tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
+r"""A class for handling the launching, logging, handling, and termination of
+external programs.
+
+A minor historical note: 
+
+The L{RunShellCommand<quickrelease.command.RunShellCommand>} class may, at first
+glance, seem a bit weird.
+
+This is mostly because it was originally a Python function that was later
+converted to a class.
+
+Additionally, an important initial design goal was to be 
+API-compatible with a U{RunShellCommand()<http://mxr.mozilla.org/mozilla/source/tools/release/MozBuild/Util.pm#25>}-function
+found in U{Mozilla<http://www.mozilla.org/>}'s (now legacy) Perl-based release 
+framework, and ported. Over the years, additionally functionality was added.
+
+Suffice it to say, while this class works well for its intended purposes,
+it is also likely ripe for refactoring.
+"""
+
 import errno
 import os
 import re
@@ -14,6 +34,15 @@ from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
 
 gUsingKillableProcess = True
+"""On Win32, the L{killableprocess<quickrelease.killableprocess>} class uses
+process groups. There is a limitation that only one process may own the handle
+to the process group. Some other tools (most notably, 
+U{buildbot<http://buildbot.net/>}) use this same method for reliably killing
+processes, and thus conflicts with QuickRelease.
+
+You can use QuickRelease under such systems by defining 
+C{DISABLE_KILLABLEPROCESS_PY} in the environment.
+"""
 
 try:
     if bool(ConfigSpec.GetConstant('DISABLE_KILLABLEPROCESS_PY')):
@@ -106,6 +135,14 @@ class _OutputQueueReader(Thread):
              self.collectedOutput[outputType])
 
 class RunShellCommandError(ReleaseFrameworkError):
+    """
+    An exception class representing various errors that can occur while
+    setting up, executing, or cleaning up an instance of L{RunShellCommand}.
+
+    The default implementation attempts to provide a detailed explanation to 
+    the user regarding the failure.
+    """
+
     STDERR_DISPLAY_CONTEXT = 5
 
     def __init__(self, rscObj):
@@ -123,7 +160,11 @@ class RunShellCommandError(ReleaseFrameworkError):
         ReleaseFrameworkError.__init__(self, explanation, rscObj)
 
     def _GetCommandObj(self): return self.details
+
     command = property(_GetCommandObj)
+    """The full original L{RunShellCommand} object which generated the error.
+    @type:  L{RunShellCommand} instance
+    """
 
 RUN_SHELL_COMMAND_DEFAULT_ARGS = { 
  'appendLogfile': True,
@@ -149,7 +190,99 @@ RUN_SHELL_COMMAND_DEFAULT_ARGS = {
 # new "output" property
 
 class RunShellCommand(object):
+    """
+    A class representing an externally-executed command, as well as various
+    properties of that command, its input and output, and its final state
+    (success/error/etc.)
+    """
     def __init__(self, *args, **kwargs):
+        """
+        Create a RunShellCommand object to execute an external command.
+
+        The constructor can be called in one of two ways:
+            1. If an array is specified, all the default options below are 
+            accepted and the command is run, with each argument of the array 
+            considered arguments.
+            2. Various keyword-style arguments can be passed, as documented
+            below.
+
+        @param command: The external command to run. First element is the
+        external program name; subsequent elements are command arguments.
+        @type  command: C{list}
+
+        @param appendLogfile: Should the logfile specified for STDOUT output
+        already exist, should they be appended to or overwritten.
+        Default: appended to (C{True})
+        @type  appendLogfile: C{bool}
+
+        @param appendErrorLogfile: Should the logfile specified for STDERR
+        output already exist, should they be appended to or overwritten.
+        Default: appended to (C{True})
+        @type  appendErrorLogfile: C{bool}
+
+        @param autoRun: Should the command be automatically launched or 
+        should the caller manage when the program is launched by calling the 
+        L{Run<quickrelease.command.RunShellCommand.Run>} method.
+        Default: run automatically (C{True})
+        @type autoRun: C{bool}
+
+        @param combineOutput: Should STDOUT and STDERR output be combined.
+        Default: yes, combine them (C{True})
+        @type combineOutput: C{bool}
+
+        @param logFile: Path to a logfile to use for STDOUT output (STDERR as 
+        well if C{combineOutput} is true).
+        @type logFile: C{str}
+
+        @param errorLogfile: Path to a logfile to use for STDERR output 
+        (ignored if C{combineOutput} is true).
+        @type errorLogfile: C{str}
+
+        @param printOutput: Print STDOUT and STDERR output to the screen.
+        Default: if unset, output will take the value of the C{verbose}
+        parameter
+        @type  printOutput: C{bool}
+
+        @param timeout: Timeout, in seconds, to wait for the process to complete
+        Default: The 
+        L{RUN_SHELL_COMMAND_DEFAULT_TIMEOUT<quickrelease.constant.QUICKRELEASE_CONSTANTS.RUN_SHELL_COMMAND_DEFAULT_TIMEOUT>}
+        controls this default value; since it is a ConfigSpec constant, it may 
+        be modified from the environment.
+        @type timeout: C{int}
+
+        @param raiseErrors: If the 
+        L{RunShellCommand<quickrelease.command.RunShellCommand>} class 
+        encounters any errors, including execution failure of the underlying 
+        program, should it automatically raise a 
+        L{RunShellCommandError<quickrelease.command.RunShellCommandError>} or 
+        let the user query the state of the shell command after the command 
+        has completed.
+        Default: raise the error (C{True})
+        @param type: C{bool}
+
+        @param verbose: Print to the screen more verbose information about 
+        when the program is being executed, in what working directory, and 
+        whether it completed successfully.
+        Also, if the C{printOutput} parameter is not specified, this argument 
+        will set it.
+        Default: be less verbose (C{False})
+        @type verbose: C{bool}
+
+        @param workdir: The working directory to chdir() to before executing
+        the program.
+        Default: the current working directory.
+        @type workdir: C{str}
+
+        @raise ValueError: when invalid argument values or initialization 
+        formats (keyword vs. singular array) are mixed, a ValueError will be 
+        raised.
+
+        @raise RunShellCommandError: if C{autoRun} is specified, and the 
+        command fails for some reason, a 
+        L{RunShellCommandError<quickrelease.command.RunShellCommandError>} 
+        will be raised.
+        """
+
         object.__init__(self)
 
         if len(args) > 0:
@@ -265,37 +398,101 @@ class RunShellCommand(object):
         return self._endTime - self._startTime
 
     command = property(_GetCommand)
+    """The external command to execute. Read-only.
+    @type: C{list}"""
+
     stdout = property(_GetStdout)
+    """A list of the STDOUT stream from the external command with line-endings
+    removed. Read-only.
+    @type: C{list}"""
+
     rawstdout = property(_GetRawStdout)
+    """A string blob of the STDOUT stream without any modification.
+    Read-only.
+    @type: C{str}"""
+
     stderr = property(_GetStderr)
+    """A list of the STDERR stream from the external command with line-endings
+    removed. Read-only.
+    @type: C{list}"""
+
     runningtime = property(_GetRunningTime)
+    """The running time of the command. C{None} if it hasn't been started yet.
+    Read-only.
+    @type: C{int} or C{None}"""
+
     starttime = property(_GetStartTime)
+    """The epoch time when the command was started. C{None} if it hasn't been 
+    started yet. Read-only.
+    @type: C{int} or C{None}"""
+
     endtime = property(_GetEndTime)
+    """The epoch time when the command completed. C{None} if it hasn't been 
+    started yet. Read-only.
+    @type: C{int} or C{None}"""
+
     returncode = property(_GetReturnCode)
+    """The return value of the external command. C{None} if it hasn't been 
+    started yet. Read-only.
+    @type: C{int} or C{None}"""
+
     processkilled = property(_GetProcessKilled)
+    """Whether the process was killed. Read-only.
+    @type: C{bool}"""
+
     processtimedout = property(_GetProcessTimedOut)
+    """Whether the process timeout value was exceeded. Read-only.
+    @type: C{bool}"""
+
     workdir = property(_GetWorkDir)
+    """The directory the command was executed in. Read-only.
+    @type: C{str}"""
+
     timeout = property(_GetTimeout)
+    """The timeout value the command was executed with. Read-only.
+    @type: C{int}"""
 
     DEFAULT__STR__SEPARATOR = ','
-    __str__separator = DEFAULT__STR__SEPARATOR
-    __str__decorate = True
+    str__separator = DEFAULT__STR__SEPARATOR
+    str__decorate = True
 
     def __str__(self):
-        strRep = self.__str__separator.join(self._execArray)
-        if self.__str__decorate:
+        strRep = self.str__separator.join(self._execArray)
+        if self.str__decorate:
             return "[" + strRep + "]"
         else:
             return strRep
 
-    def SetStrOpts(self, separator=DEFAULT__STR__SEPARATOR, decorate=True):
-        self.__str__separator = separator
-        self.__str__decorate = decorate 
-
     def __int__(self):
         return self.returncode
 
+    def SetStrOpts(self, separator=DEFAULT__STR__SEPARATOR, decorate=True):
+        """
+        Sets options for the representation of the command string for its
+        __str__ method.
+
+        @param separator: separator character to use to separate command 
+        arguments; it may be useful to change this if your commands tend
+        to involve a lot of the default separator. Default: "%s"
+        @type  separator: C(str)
+
+        @param decorate: Should the string be "decorated"; default: C(true) 
+        @type  decorate: C(bool)
+        """ % (RunShellCommand.DEFAULT__STR__SEPARATOR)
+
+        self.str__separator = separator
+        self.str__decorate = decorate 
+
     def Run(self):
+        """
+        Launch the external command specified by this 
+        L{RunShellCommand<quickrelease.command.RunShellCommand>} object.
+
+        @raise RunShellCommandError: if C{raiseErrors} was set in the 
+        constructor and the external command either returns with a failure
+        value or times out, a RunShellCommandError will be raised.
+        """
+
         if self._verbose:
             timeoutStr = ""
             if self.timeout is not None and gUsingKillableProcess:
