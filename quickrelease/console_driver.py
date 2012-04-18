@@ -25,6 +25,16 @@
 # SOFTWARE.
 #
 
+r"""QuickRelease's command-line driver.
+
+Allows users to set options, get information about the defined processes/steps,
+run specific processes, and wraps various exceptions so as to present a 
+nicer interface.
+
+This driver will normally get installed to your python installation's binary 
+directory as "quickrelease" when installing QuickRelease with setuptools.
+"""
+
 from optparse import OptionParser
 import os
 import sys
