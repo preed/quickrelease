@@ -76,6 +76,8 @@ class ConfigSpec(object):
     CONFIG_SECTION_DELIMETER = ':'
     DELIV_SECTION_PREFIX = 'deliverable'
     PARTNER_SECTION_PREFIX = 'partner'
+    USER_DEFINED_CONSTANTS_ENV_VAR = 'QUICKRELEASE_USER_DEFINED_CONSTANTS'
+    QR_CONSTANTS_DICT_NAME = 'QUICKRELEASE_CONSTANTS'
 
     @staticmethod
     def GetConstant(name):
@@ -107,16 +109,57 @@ class ConfigSpec(object):
         value = os.getenv(name)
 
         if value is not None:
-            if name in constants.CONSTANTS_FROM_ENV_HANDLERS.keys():
-                return constants.CONSTANTS_FROM_ENV_HANDLERS[name](value)
+            envConstantsHandlers = ConfigSpec._GetEnvConstantsHandlerDict()
+            if name in envConstantsHandlers.keys():
+                return envConstantsHandlers[name](value)
             else:
                 return value
 
         if name in ConfigSpec.GetDefinedConstants():
-            return constants.QUICKRELEASE_CONSTANTS[name]
+            return ConfigSpec._GetConstantsDict()[name]
 
         raise ConfigSpecError("Undefined constant '%s'" % (name),
          ConfigSpecError.NO_CONSTANT_ERROR)
+
+    @staticmethod
+    def GetUserDefinedConstantsDict(modName, dictName):
+        constantsDict = getattr(ImportModule(modName), dictName)
+        if type(constantsDict) is not dict:
+            raise ValueError("User-defined constant module %s must define %s "
+             "as a dictionary" % (modName, dictName))
+        return constantsDict
+
+    @staticmethod
+    def _GetEnvConstantsHandlerDict():
+        modName = os.getenv(ConfigSpec.USER_DEFINED_CONSTANTS_ENV_VAR)
+        if modName is not None:
+            # the env handlers are (right now) optional, so ignore
+            # any import/etc. errors.
+            try:
+                return ConfigSpec.GetUserDefinedConstantsDict(modName,
+                 'CONSTANTS_FROM_ENV_HANDLERS')
+            except ValueError:
+                pass
+            except AttributeError:
+                pass
+
+        return constants.CONSTANTS_FROM_ENV_HANDLERS
+
+    @staticmethod
+    def _GetConstantsDict():
+        modName = os.getenv(ConfigSpec.USER_DEFINED_CONSTANTS_ENV_VAR)
+        if modName is not None:
+            try:
+                return ConfigSpec.GetUserDefinedConstantsDict(modName,
+                 ConfigSpec.QR_CONSTANTS_DICT_NAME)
+            except ValueError, ex:
+                raise ConfigSpecError(str(ex))
+            except AttributeError, ex:
+                raise ConfigSpecError("User-defined constants in module %s "
+                 "must be defined in a dictionary named "
+                 "%s" % (modName, ConfigSpec.QR_CONSTANTS_DICT_NAME))
+
+        return constants.QUICKRELEASE_CONSTANTS
 
     @staticmethod
     def GetDefinedConstants():
@@ -125,7 +168,7 @@ class ConfigSpec(object):
                   available via the environment.)
         @rtype:   C{list}
         """
-        return constants.QUICKRELEASE_CONSTANTS.keys()
+        return ConfigSpec._GetConstantsDict().keys()
 
     def __init__(self, configFile, rootDir=os.getcwd(),
      section=DEFAULT_SECTION, overrides=()):
@@ -687,4 +730,9 @@ class ConfigSpec(object):
             retDict[keyName] = keyValue
 
         return retDict
+
+# Need to put this down here, because we have a circular import dependency on 
+# this, unfortunately.
+
+from quickrelease.utils import ImportModule
 

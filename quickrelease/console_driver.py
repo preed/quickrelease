@@ -47,6 +47,7 @@ from quickrelease.utils import PrintReleaseFrameworkError
 QUICK_RELEASE_VERSION = '0.15.0pre'
 
 gRootDir = None
+gUserDefinedConstants = None
 
 def main():
     global gRootDir
@@ -58,6 +59,9 @@ def main():
                  action='store_true',
                  help="Run only a single step of the specified process; "
                  "useful with --start-at.")
+    o.add_option('-C', '--user-constants', dest='userConstants', default=None,
+                 help="Package path to user-defined constants."
+                 "See documentation for more information.")
     o.add_option('-c', '--config', dest='configSpecFile', default=None,
                  help="Harness configuration specification file to use. "
                  "Required.")
@@ -140,6 +144,17 @@ def main():
         print >> sys.stderr, "Invalid root dir: %s" % (gRootDir)
         o.print_help(file=sys.stderr)
         return -1
+
+    if options.userConstants is not None:
+        try:
+            ConfigSpec.GetUserDefinedConstantsDict(options.userConstants,
+             ConfigSpec.QR_CONSTANTS_DICT_NAME)
+            os.environ[ConfigSpec.USER_DEFINED_CONSTANTS_ENV_VAR] = (
+             options.userConstants)
+        except ConfigSpecError, ex:
+            print >> sys.stderr, str(ex)
+            o.print_help(file=sys.stderr)
+            return -1
 
     try:
         configSpec = ConfigSpec(options.configSpecFile,
