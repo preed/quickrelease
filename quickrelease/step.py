@@ -162,7 +162,7 @@ class _PartnerStepRunner(object):
         rootDir = conf.rootDir
         errors = []
 
-        for p in GetActivePartnerList(conf):
+        for p in GetActivePartners(conf):
             try:
                 os.chdir(rootDir)
                 stepObj.activePartner = p
@@ -194,13 +194,13 @@ class _PartnerStepRunner(object):
 class PartnerStep(Step):
     """
     A special type of L{Step} which will perform the requested C{Execute} and
-    C{Verify} methods for all active partners (as determined by L{GetActivePartnerList<quickrelease.utils.GetActivePartnerList>}).
+    C{Verify} methods for all active partners (as determined by L{GetActivePartners<quickrelease.utils.GetActivePartners>}).
 
     Subclasses may call the the constructor of C{PartnerStep} with the following
     keywords to modify its behavior:
 
-      1. C{auto_set_partner_config}: By default, when the L{PartnerStep} sets the next partner to execute or verify the portion of the current step, it will also set the section of the associated L{ConfigSpec<quickrelease.config.ConfigSpec>} to the active partner section (via a call to L{SetPartnerSection<quickrelease.config.ConfigSpec.SetActiveParnterConfig>}. Setting this to C{False} will disable that bahavior and make the subclassed L{PartnerStep}s responsible for managing the state of their L{ConfigSpec<quickrelease.config.ConfigSpec>}.
-      2. C{halt_on_first_error}: By default, if an error is encountered during the execution or verification portion of a L{PartnerStep}, the error will be reported and noted, but the L{Step} will continue for each active partner. Once each active partner's step has been called, I{then} the L{PartnerStep} will halt. For example, say there exist two partners, "Acme" and "Biffco" and a three-step process, consisting of L{PartnerSteps} named C{WillBeOK}, C{WillFailForAcme}, and C{WillNotRun}. By default, C{WillBeOK} will run for Acme and Biffco; C{WillFailForAcme} will run for Acme and fail, and will then run for Biffco, and succeed. At this point, the L{PartnerStep} will halt with the errors, and the last step will not run. If this is set to C{True}, the L{PartnerStep} would immediately halt when it encountered the Acme-error.
+      1. C{auto_set_partner_config}: By default, when the L{PartnerStep} sets the next partner to execute or verify the portion of the current step, it will also set the section of the associated L{ConfigSpec<quickrelease.config.ConfigSpec>} to the active partner section (via a call to L{SetPartnerSection<quickrelease.config.ConfigSpec.SetPartnerSection>}. Setting this to C{False} will disable that bahavior and make the subclassed L{PartnerStep}s responsible for managing the state of their L{ConfigSpec<quickrelease.config.ConfigSpec>}.
+      2. C{halt_on_first_error}: By default, if an error is encountered during the execution or verification portion of a L{PartnerStep}, the error will be reported and noted, but the L{Step} will continue for each active partner. Once each active partner's step has been called, I{then} the L{PartnerStep} will halt. For example, say there exist two partners, "Acme" and "Biffco" and a three-step process, consisting of L{PartnerStep}s named C{WillBeOK}, C{WillFailForAcme}, and C{WillNotRun}. By default, C{WillBeOK} will run for Acme and Biffco; C{WillFailForAcme} will run for Acme and fail, and will then run for Biffco, and succeed. At this point, the L{PartnerStep} will halt with the errors, and the last step will not run. If this is set to C{True}, the L{PartnerStep} would immediately halt when it encountered the Acme-error.
     """
     def __init__(self, *args, **kwargs):
         Step.__init__(self, *args, **kwargs)
@@ -220,7 +220,7 @@ class PartnerStep(Step):
     def _GetActivePartner(self): return self._activePartner
 
     def _SetActivePartner(self, partner):
-        if partner not in GetActivePartnerList(self.config):
+        if partner not in GetActivePartners(self.config):
             raise self.SimpleStepError("Unknown partner '%s'" % (partner))
 
         self._activePartner = partner

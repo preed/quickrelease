@@ -77,7 +77,7 @@ class Process(object):
         @param verifySteps: Run the C{Verify} method of the L{Step<quickrelease.step.Step>}s comprising this L{Process}.
         @type verifySteps: C{bool}
 
-        @param ignoreErrors: Print any L{ReleaseFrameworkError<quickrelease.exception.ReleaseFrameworkError}s that occur during the running of the given L{Process}, but continue execution.
+        @param ignoreErrors: Print any L{ReleaseFrameworkError<quickrelease.exception.ReleaseFrameworkError>}s that occur during the running of the given L{Process}, but continue execution.
         @type ignoreErrors: C{bool}
         """
 
@@ -143,7 +143,7 @@ class Process(object):
     @type: L{ConfigSpec<quickrelease.config.ConfigSpec>}"""
 
     errored = property(_HadErrors)
-    """Has this process ever encountered an error. Useful for when warnings are ignored or in L{PartnerStep<quickrelease.step.PartnerStep}s. Read-only.
+    """Has this process ever encountered an error. Useful for when warnings are ignored or in L{PartnerStep<quickrelease.step.PartnerStep>}s. Read-only.
     @type: C{bool}"""
 
     processStepNames = property(_GetProcessStepNames)
@@ -157,15 +157,15 @@ class Process(object):
 
     def Run(self, startingStepName=None, stepsToRun=None):
         """
-        Run this L{Step<quickrelease.step.Step}s comprising this process.
+        Run this L{Step<quickrelease.step.Step>}s comprising this process.
 
         @param startingStepName: The name of the step to start at. Default: the first step.
         @type startingStepName: C{str}
 
         @param stepsToRun: The number of steps of the process to run. Default: all.
-        @type: C{int}
+        @type stepsToRun: C{int}
 
-        @raise ValueError: If C{startingStepName} refers to a non-existant L{Step<quickrelease.step.Step}.
+        @raise ValueError: If C{startingStepName} refers to a non-existant L{Step<quickrelease.step.Step>}.
         """
 
         processSteps = self.processSteps
@@ -343,7 +343,7 @@ def GetProcessByName(procName=None, config=None, *args, **kwargs):
     @type args: C{list}
 
     @param kwargs: Keyword arguments to pass to the constructor of the given L{Process}. Preferred over positional arguments.
-    @type args: C{dict}
+    @type kwargs: C{dict}
 
     @return: instantiated L{Process} object
     @rtype: L{Process} or C{None} if no process by that name exists.

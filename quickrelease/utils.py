@@ -33,7 +33,7 @@ def GetDeliverableRootPath(configSpec):
     for searching for deliverables.
     
     Useful when employing 
-    L{FindDeliverables<quickrelease.deliverables.FindDeliverables>}.
+    L{FindDeliverables<quickrelease.deliverable.FindDeliverables>}.
 
     @note: Requires C{release_deliverables_dir} be defined in the configuration
     specification.
@@ -229,7 +229,7 @@ def ImportFunction(functionName):
     module and returning it for use.
     @param functionName: the fully qualified name, including package, of the 
     function to attempt to import
-    @type moduleName: C{str}
+    @type functionName: C{str}
 
     @return: A function object which can be called.
     @rtype: C{function}

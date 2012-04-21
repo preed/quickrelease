@@ -490,7 +490,7 @@ class ConfigSpec(object):
         and C{dict}; by default, a C{str} is returned.
         @type  coercion: C{type}
 
-        @param interOverrides: If overrides are allowed, a dictionary of 
+        @param interpOverrides: If overrides are allowed, a dictionary of 
         key/value pairs to override values for for the current request. If set i
         to None, no L{SafeConfigParser<ConfigParser.SafeConfigParser>}
         interpolation will take place, and the raw values specified in the 

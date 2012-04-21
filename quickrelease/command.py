@@ -245,7 +245,7 @@ class RunShellCommand(object):
 
         @param timeout: Timeout, in seconds, to wait for the process to complete
         Default: The 
-        L{RUN_SHELL_COMMAND_DEFAULT_TIMEOUT<quickrelease.constant.QUICKRELEASE_CONSTANTS.RUN_SHELL_COMMAND_DEFAULT_TIMEOUT>}
+        RUN_SHELL_COMMAND_DEFAULT_TIMEOUT in L{QUICKRELEASE_CONSTANTS<quickrelease.constants.QUICKRELEASE_CONSTANTS>}
         controls this default value; since it is a ConfigSpec constant, it may 
         be modified from the environment.
         @type timeout: C{int}
