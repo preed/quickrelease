@@ -35,7 +35,7 @@ class StepError(ReleaseFrameworkError):
         return "Error in step %s%s: %s" % (str(self.erroredStep),
          self._partnerStr, ReleaseFrameworkError.__str__(self))
 
-class StandardStepRunner(object):
+class _StandardStepRunner(object):
     def __init__(self, *args, **kwargs):
         object.__init__(self)
 
@@ -64,7 +64,7 @@ class Step(object):
         """
         object.__init__(self)
         self._parentProcess = None
-        self._runner = StandardStepRunner()
+        self._runner = _StandardStepRunner()
 
         if kwargs.has_key('process'):
             self._parentProcess =  kwargs['process']
@@ -153,7 +153,7 @@ class Step(object):
         """
         return StepError(self, errStr, details=details)
 
-class PartnerStepRunner(object):
+class _PartnerStepRunner(object):
     def __init__(self, *args, **kwargs):
         object.__init__(self)
 
@@ -169,7 +169,7 @@ class PartnerStepRunner(object):
                 stepMethod = getattr(stepObj, methodName)
                 stepMethod()
             except ReleaseFrameworkError, ex:
-                if stepObj.haltOnFirstError:
+                if stepObj._haltOnFirstError:
                     raise ex
                 else:
                     # Unless we're in quiet mode...
@@ -204,18 +204,18 @@ class PartnerStep(Step):
     """
     def __init__(self, *args, **kwargs):
         Step.__init__(self, *args, **kwargs)
-        self._runner = PartnerStepRunner()
+        self._runner = _PartnerStepRunner()
         self._activePartner = None
         self._partnerData = {}
 
-        self.autoSetPartnerConfig = True
-        self.haltOnFirstError = False
+        self._autoSetPartnerConfig = True
+        self._haltOnFirstError = False
 
         if kwargs.has_key('auto_set_partner_config'):
-            self.autoSetPartnerConfig = kwargs['auto_set_partner_config']
+            self._autoSetPartnerConfig = kwargs['auto_set_partner_config']
 
         if kwargs.has_key('halt_on_first_error'):
-            self.haltOnFirstError = kwargs['halt_on_first_error']
+            self._haltOnFirstError = kwargs['halt_on_first_error']
 
     def _GetActivePartner(self): return self._activePartner
 
@@ -225,7 +225,7 @@ class PartnerStep(Step):
 
         self._activePartner = partner
 
-        if self.autoSetPartnerConfig:
+        if self._autoSetPartnerConfig:
             self.config.SetPartnerSection(partner)
 
         if partner not in self._partnerData.keys():
