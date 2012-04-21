@@ -1,6 +1,15 @@
 # ex:ts=4:sw=4:sts=4:et
 # -*- tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
+r"""
+The base class for QuickRelease processes, along with utility functions to 
+find, load, manipulate, and run L{Process}es.
+
+L{Process}es are usually searched for in the C{quickrelease/processes} directory. This behavior can be modified by setting the B{C{QUICKRELEASE_DEFINITIONS_PATH}} to the name of a directory containing both a "processes" and "steps" directory.
+
+If you want to exclude the inclusion of any L{Process}es or L{Step<quickrelease.step.Step>}s in the standard QuickRelease directories, set B{C{QUICKRELEASE_OVERRIDE_DEFAULT_DEFINITIONS}} in the environment.
+"""
+
 from glob import glob
 import inspect
 import os
@@ -56,6 +65,22 @@ class Process(object):
     _gAvailableProcessList = None
 
     def __init__(self, *args, **kwargs):
+        """
+        Construct a L{Process} object.
+
+        @param config: A configuration specification to associate with this L{Process}
+        @type config: L{ConfigSpec<quickrelease.config.ConfigSpec>}
+
+        @param executeSteps: Run the C{Execute} method of the L{Step<quickrelease.step.Step>}s comprising this L{Process}.
+        @type executeSteps: C{bool}
+
+        @param verifySteps: Run the C{Verify} method of the L{Step<quickrelease.step.Step>}s comprising this L{Process}.
+        @type verifySteps: C{bool}
+
+        @param ignoreErrors: Print any L{ReleaseFrameworkError<quickrelease.exception.ReleaseFrameworkError}s that occur during the running of the given L{Process}, but continue execution.
+        @type ignoreErrors: C{bool}
+        """
+
         object.__init__(self)
 
         # initialize these if the subclass didn't
@@ -79,9 +104,8 @@ class Process(object):
         assert self._executeSteps is True or self._verifySteps is True, (
          "Neither executeSteps, nor verifySteps was requested; NOTHING TO DO!")
 
-    # The default string representation for process steps is the name
-    # of the class... but feel free to override.
     def __str__(self):
+        """@note: The default string representation for process steps is the name of the class... but feel free to override."""
         return self.__class__.__name__
 
     def __cmp__(self, other):
@@ -115,11 +139,35 @@ class Process(object):
         return tuple(steps)
 
     config = property(_GetConfig)
+    """The L{ConfigSpec<quickrelease.config.ConfigSpec>} associated with this process when it was created. Read-only.
+    @type: L{ConfigSpec<quickrelease.config.ConfigSpec>}"""
+
     errored = property(_HadErrors)
+    """Has this process ever encountered an error. Useful for when warnings are ignored or in L{PartnerStep<quickrelease.step.PartnerStep}s. Read-only.
+    @type: C{bool}"""
+
     processStepNames = property(_GetProcessStepNames)
+    """Names of the L{Step<quickrelease.step.Step>}s comprising this L{Process}. Read-only.
+    @type: C{list} of C{str}"""
+
     processSteps = property(_GetProcessSteps)
+    """Instantiated L{Step<quickrelease.step.Step>} objects comprising this L{Process}. Read-only.
+    @type: C{list} of L{Step<quickrelease.step.Step>}"""
+
 
     def Run(self, startingStepName=None, stepsToRun=None):
+        """
+        Run this L{Step<quickrelease.step.Step}s comprising this process.
+
+        @param startingStepName: The name of the step to start at. Default: the first step.
+        @type startingStepName: C{str}
+
+        @param stepsToRun: The number of steps of the process to run. Default: all.
+        @type: C{int}
+
+        @raise ValueError: If C{startingStepName} refers to a non-existant L{Step<quickrelease.step.Step}.
+        """
+
         processSteps = self.processSteps
 
         startNdx = 0
@@ -174,6 +222,20 @@ class Process(object):
                 raise ex
 
 def GetAvailableProcesses():
+    """
+    Search for and instantiate all of the defined QuickRelease L{Process}es.
+
+    B{Note}: for performance reasons, a cache is used to store these L{Process}es after the first call to C{GetAvailableProcesses()}. There is currently no way to clear this cache.
+
+    @return: A tuple of references to all defined QuickRelease L{Process}es in the provided "processes" directories.
+    @rtype: C{tuple} of L{Process}
+
+    @raise ReleaseFrameworkError: A L{ReleaseFrameworkError<quickrelease.exception.ReleaseFrameworkError>} is raised in the following circumstances:
+      1. A L{Process} lists a L{Step<quickrelease.step.Step>}, but that Step is not defined.
+      2. A L{Process} is attempting to import a module which has not been defined.
+      3. A L{Process} is attempting to import a L{Step<quickrelease.step.Step>}, but that Step contains a syntax error.
+      4. Other problems may cause L{NameError}s, L{ImportError}s, or L{SyntaxError}s to be recast into L{ReleaseFrameworkError<quickrelease.exception.ReleaseFrameworkError>}s with the original error message.
+    """
     if Process._gAvailableProcessList is None:
         Process._gAvailableProcessList = []
 
@@ -253,6 +315,12 @@ def GetAvailableProcesses():
     return Process._gAvailableProcessList
 
 def GetAvailableProcessesList():
+    """
+    Get a list of all the available QuickRelease processes.
+
+    @return: all available, defined L{Process}es
+    @rtype: C{tuple} of L{Process}
+    """
     ret = []
 
     for proc in GetAvailableProcesses():
@@ -262,6 +330,25 @@ def GetAvailableProcessesList():
     return tuple(ret)
 
 def GetProcessByName(procName=None, config=None, *args, **kwargs):
+    """
+    Look for provided process by name and instantiate it.
+
+    @param procName: The L{Process} name to search for and instantiate 
+    @type procName: C{str}
+    
+    @param config: A configuration specification to associate the given process with when it is executed.
+    @type config: L{ConfigSpec<quickrelease.config.ConfigSpec>}
+
+    @param args: Positional arguments to pass to the constructor of the given L{Process}
+    @type args: C{list}
+
+    @param kwargs: Keyword arguments to pass to the constructor of the given L{Process}. Preferred over positional arguments.
+    @type args: C{dict}
+
+    @return: instantiated L{Process} object
+    @rtype: L{Process} or C{None} if no process by that name exists.
+    """
+
     if procName is None:
         return None
 
