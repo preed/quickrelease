@@ -250,7 +250,7 @@ def GetAvailableProcesses():
             finally:
                 os.chdir(cwd)
 
-            processModuleFiles.remove('__init__.py')
+            processModuleFiles.remove(INIT_PY)
 
             if len(processModuleFiles) <= 0:
                 continue
