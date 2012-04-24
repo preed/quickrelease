@@ -5,7 +5,7 @@ import time
 
 from quickrelease.command import RunShellCommand
 from quickrelease.exception import ReleaseFrameworkError
-from quickrelease.step import Step
+from quickrelease.step import Step, StepError
 from quickrelease.utils import GetBuildPlatform, GetSHA1FileHash
 
 def PlatformCheck(conf):
@@ -25,16 +25,16 @@ def VerifyFirefoxDownload(conf):
     sourceFileFullPath = os.path.join(conf.rootDir, sourceFile)
 
     if not os.path.isfile(sourceFileFullPath):
-        raise ReleaseFrameworkError("Couldn't find downloaded firefox "
-         "source code: %s" % (sourceFileFullPath))
+        raise ValueError("Couldn't find downloaded firefox source code: %s" %
+         (sourceFileFullPath))
 
     sourceSha1 = conf.Get('source_checksum')
 
     downloadSha1 = GetSHA1FileHash(sourceFileFullPath)
 
     if sourceSha1 != downloadSha1:
-        raise ReleaseFrameworkError("Download doesn't match expected SHA1: "
-         "expected: %s; download checksum: %s" % (sourceSha1, downloadSha1))
+        raise ValueError("Download doesn't match expected SHA1: expected: %s; "
+         "download checksum: %s" % (sourceSha1, downloadSha1))
 
 
 def VerifyFirefoxBuildConfigured(conf):
@@ -44,7 +44,7 @@ def VerifyFirefoxBuildConfigured(conf):
     for f in autoconfTestFiles:
         testFile = os.path.join(sourceRoot, f)
         if not os.path.isfile(testFile):
-            raise ReleaseFrameworkError("Autoconf test file not present: %s"                 % (testFile))
+            raise ValueError("Autoconf test file not present: %s" % (testFile))
 
     confStatusFile = os.path.join(sourceRoot, conf.Get('autoconf_status_file'))
 
@@ -55,8 +55,8 @@ def VerifyFirefoxBuildConfigured(conf):
     confStatusFileHandle.close()
 
     if lastLine.strip() != 'exit 0':
-        raise ReleaseFrameworkError("Last %s line didn't match successful "
-         "exit: %s" % (confStatusFile, lastLine))
+        raise ValueError("Last %s line didn't match successful exit: %s" %
+         (confStatusFile, lastLine))
 
 class FirefoxDownloadSource(Step):
     def __init__(self, *args, **kwargs):
@@ -77,7 +77,10 @@ class FirefoxDownloadSource(Step):
                              verbose=True)
 
     def Verify(self):
-        VerifyFirefoxDownload(self.config)
+        try:
+            VerifyFirefoxDownload(self.config)
+        except ValueError, ex:
+            raise self.SimpleStepError(str(ex))
 
 class FirefoxExtractSource(Step):
     def __init__(self, *args, **kwargs):
@@ -86,7 +89,10 @@ class FirefoxExtractSource(Step):
     def Preflight(self):
         conf = self.config
         PlatformCheck(conf)
-        VerifyFirefoxDownload(conf)
+        try:
+            VerifyFirefoxDownload(self.config)
+        except ValueError, ex:
+            raise self.SimpleStepError(str(ex))
 
     def Execute(self):
         conf = self.config
@@ -111,8 +117,8 @@ class FirefoxExtractSource(Step):
         for f in firefoxTestFiles:
             testFile = os.path.join(sourceRoot, f)
             if not os.path.isfile(testFile):
-                raise ReleaseFrameworkError("Missing Firefox source file: %s"
-                 % (testFile))
+                raise self.SimpleStepError("Missing Firefox source file: %s" %
+                 (testFile))
 
 class FirefoxConfigureBuild(Step):
     def __init__(self, *args, **kwargs):
@@ -127,7 +133,7 @@ class FirefoxConfigureBuild(Step):
         mcFile = self._GetMozconfigFilename()
 
         if os.path.isfile(mcFile):
-            raise ReleaseFrameworkError("Existing Mozconfig is in the way: %s" %
+            raise self.SimpleStepError("Existing Mozconfig is in the way: %s" %
              mcFile)
 
     def Execute(self):
@@ -148,7 +154,10 @@ class FirefoxConfigureBuild(Step):
                         verbose=True )
 
     def Verify(self):
-        VerifyFirefoxBuildConfigured(self.config)
+        try:
+            VerifyFirefoxBuildConfigured(self.config)
+        except ValueError, ex:
+            raise self.SimpleStepError(str(ex))
 
 class FirefoxDoBuild(Step):
     def __init__(self, *args, **kwargs):
@@ -157,7 +166,10 @@ class FirefoxDoBuild(Step):
     def Preflight(self):
         conf = self.config
         PlatformCheck(conf)
-        VerifyFirefoxBuildConfigured(conf)
+        try:
+            VerifyFirefoxBuildConfigured(self.config)
+        except ValueError, ex:
+            raise self.SimpleStepError(str(ex))
 
     def Execute(self):
         conf = self.config
