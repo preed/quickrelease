@@ -172,7 +172,7 @@ def main():
             if processToRun is None:
                 raise ValueError("Unknown process: %s" % (options.process))
 
-            processToRun.RunProcess(startingStepName=options.startAt,
+            processToRun.Run(startingStepName=options.startAt,
              stepsToRun=stepsToRun)
 
             processHadErrors = processToRun.errored
