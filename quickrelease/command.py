@@ -70,6 +70,7 @@ PIPE_STDERR = 2
 # only output \n
 REMOVE_LINE_ENDING = lambda x: re.sub('\r?\n?$', '', x)
 
+# Threading implementation inspired by: http://stackoverflow.com/a/4896288
 class _OutputQueueReader(Thread):
     def __init__(self, queue=None,
                        monitoredStreams=2,
