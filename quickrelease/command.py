@@ -17,8 +17,15 @@ API-compatible with a U{RunShellCommand()<http://mxr.mozilla.org/mozilla/source/
 found in U{Mozilla<http://www.mozilla.org/>}'s (now legacy) Perl-based release 
 framework, and ported. Over the years, additionally functionality was added.
 
+It may seem odd that this class uses threading (and the old adage--"if you
+solve a problem with threads, now you have I{two} problems"--may come to mind),
+but this solution was based on the fact that the standard C{poll()}/C{select()}
+model doesn't work on Win32, and RunShellCommand was required to support that
+use-case.
+
 Suffice it to say, while this class works well for its intended purposes,
-it is also likely ripe for refactoring.
+it is also likely ripe for refactoring, including possible conversion to 
+something such as U{MozProcess<https://github.com/mozautomation/mozmill/tree/b8eab24394d040bfadb25f041260cc39dcadd776/mozprocess>}.
 """
 
 import errno
@@ -202,7 +209,7 @@ class RunShellCommand(object):
         The constructor can be called in one of two ways:
             1. If an array is specified, all the default options below are 
             accepted and the command is run, with each argument of the array 
-            considered arguments.
+            considered arguments. (See U{the Python documentation<http://docs.python.org/library/subprocess.html#converting-argument-sequence>} for further rules regarding argument tolkenization on Windows.)
             2. Various keyword-style arguments can be passed, as documented
             below.
 
@@ -210,13 +217,13 @@ class RunShellCommand(object):
         external program name; subsequent elements are command arguments.
         @type  command: C{list}
 
-        @param appendLogfile: Should the logfile specified for STDOUT output
-        already exist, should they be appended to or overwritten.
+        @param appendLogfile: Should the logfile specified for C{STDOUT} output
+        already exist, should it be appended to or overwritten.
         Default: appended to (C{True})
         @type  appendLogfile: C{bool}
 
         @param appendErrorLogfile: Should the logfile specified for STDERR
-        output already exist, should they be appended to or overwritten.
+        output already exist, should it be appended to or overwritten.
         Default: appended to (C{True})
         @type  appendErrorLogfile: C{bool}
 
@@ -226,26 +233,26 @@ class RunShellCommand(object):
         Default: run automatically (C{True})
         @type autoRun: C{bool}
 
-        @param combineOutput: Should STDOUT and STDERR output be combined.
+        @param combineOutput: Should C{STDOUT} and C{STDERR} output be combined.
         Default: yes, combine them (C{True})
         @type combineOutput: C{bool}
 
-        @param logFile: Path to a logfile to use for STDOUT output (STDERR as 
-        well if C{combineOutput} is true).
+        @param logFile: Path to a logfile to use for C{STDOUT} output (C{STDERR}
+        as well if C{combineOutput} is true).
         @type logFile: C{str}
 
-        @param errorLogfile: Path to a logfile to use for STDERR output 
+        @param errorLogfile: Path to a logfile to use for C{STDERR} output 
         (ignored if C{combineOutput} is true).
         @type errorLogfile: C{str}
 
-        @param printOutput: Print STDOUT and STDERR output to the screen.
+        @param printOutput: Print C{STDOUT} and C{STDERR} output to the screen.
         Default: if unset, output will take the value of the C{verbose}
         parameter
         @type  printOutput: C{bool}
 
         @param timeout: Timeout, in seconds, to wait for the process to complete
         Default: The 
-        RUN_SHELL_COMMAND_DEFAULT_TIMEOUT in L{QUICKRELEASE_CONSTANTS<quickrelease.constants.QUICKRELEASE_CONSTANTS>}
+        C{RUN_SHELL_COMMAND_DEFAULT_TIMEOUT} in L{QUICKRELEASE_CONSTANTS<quickrelease.constants.QUICKRELEASE_CONSTANTS>}
         controls this default value; since it is a ConfigSpec constant, it may 
         be modified from the environment.
         @type timeout: C{int}
@@ -258,7 +265,7 @@ class RunShellCommand(object):
         let the user query the state of the shell command after the command 
         has completed.
         Default: raise the error (C{True})
-        @param type: C{bool}
+        @type raiseErrors: C{bool}
 
         @param verbose: Print to the screen more verbose information about 
         when the program is being executed, in what working directory, and 
@@ -268,10 +275,17 @@ class RunShellCommand(object):
         Default: be less verbose (C{False})
         @type verbose: C{bool}
 
-        @param workdir: The working directory to chdir() to before executing
+        @param workdir: The working directory to C{chdir()} to before executing
         the program.
         Default: the current working directory.
         @type workdir: C{str}
+
+        @param input: A file name or input stream to provide to the program as 
+        C{STDIN}. If a file name (C{str}) is provided, it will be opened and 
+        closed. An open input stream may also be provided.
+        Default: No input stream is provided (C{None}); C{STDIN} is closed 
+        when the command is executed.
+        @type input: C{str} or C{file}
 
         @raise ValueError: when invalid argument values or initialization 
         formats (keyword vs. singular array) are mixed, a ValueError will be 
@@ -402,18 +416,18 @@ class RunShellCommand(object):
     @type: C{list}"""
 
     stdout = property(_GetStdout)
-    """A list of the STDOUT stream from the external command with line-endings
-    removed. Read-only.
+    """A list of the C{STDOUT} stream from the external command with 
+    line-endings removed. Read-only.
     @type: C{list}"""
 
     rawstdout = property(_GetRawStdout)
-    """A string blob of the STDOUT stream without any modification.
+    """A string blob of the C{STDOUT} stream without any modification.
     Read-only.
     @type: C{str}"""
 
     stderr = property(_GetStderr)
-    """A list of the STDERR stream from the external command with line-endings
-    removed. Read-only.
+    """A list of the C{STDERR} stream from the external command with 
+    line-endings removed. Read-only.
     @type: C{list}"""
 
     runningtime = property(_GetRunningTime)

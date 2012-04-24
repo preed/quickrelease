@@ -14,13 +14,13 @@ about the deliverable. Deliverables may also be filtered by attribute.
 
 There are three types of attributes which may be defined and used to filter:
 
-  1. B{Callback attributes}: this callback function is called with the L{Deliverable<quickrelease.deliverable.Deliverable>} object in question; if the function returns the string being filtered for, the deliverable is considered to match.
+  1. B{Callback attributes}: this callback function is called with the L{Deliverable<quickrelease.deliverable.Deliverable>} object to match against; if the function returns the string being filtered for, the deliverable is considered to match.
   2. B{Regular expression attributes}: the file name is evaluated against the given regular expression; usually, this regular expression contains a (singular) backreference that is used to match against.
   3. B{Value attributes}: these are static values that are simply matched against verbatim.
 
 A deliverable is defined like so:
 
-  1. In the config file, create a section called C{[deliverable:B{name}]}. When querying to find all deliverables that meet this definition, you will refer to it by this name. This name, along with any additional filter attributes, is called the "deliverable class."
+  1. In the config file, create a section called C{[deliverable:B{name}]}. When querying to find all deliverables that meet this definition, refer to it by this name. This name, along with any additional filter attributes, is called the "deliverable class."
   2. Define an item in that config section that is either the deliverable file's name (C{name}) or a regular expression (C{regex}) matching the deliverable file, B{but not both}
   3. To define deliverable attributes, create an C{attributes} item, and list the attributes by name.
   4. To filter deliverables using these attributes, create a C{filter_attributes} item, and list all attributes available to filter by. All C{filter_attributes} must be listed in the C{attributes} list. Filter attributes are evaluated in the order they are defined.
@@ -55,11 +55,11 @@ Example
 Two deliverable definitions follow; one for an installer and the other for a 
 set of language packs related to an application.
 
-Our installer has a 32-bit and 64-bit version; for illustration purposes,
+The installer has a 32-bit and 64-bit version; for illustration purposes,
 assume that for historical reasons, the installer names for the two types
 are the same, but reside in different directories. (This comes from a real-
 world example, but from a release engineering best-practices standpoint,
-the installer should have a unique name.)::
+the installer should have a unique name)::
 
  [deliverable:installer]
  name=MyApplication.exe
@@ -362,7 +362,7 @@ class Deliverable(object):
     @type: C{str}"""
 
     file = property(_GetFileName)
-    """The full path to the deliverable. Read-only.
+    """The name of the file, without its path. Read-only.
     @type: C{str}"""
 
     regex = property(_GetRegex)

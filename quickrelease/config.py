@@ -1,19 +1,27 @@
 # ex:ts=4:sw=4:sts=4:et
 # -*- tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-r"""quickrelease.config - A representation of a key/value configuration 
-specification, selected by the user at runtime.
+r"""A representation of a key/value configuration specification, selected by 
+the user at runtime.
 
 This module is wrapper around the builtin ConfigParser module. It removes the 
 ability to modify the configuration at runtime, and adds some 
-quickrelease-specific functionality (definition of "partners" and
-"deliverables.")
+QuickRelease-specific functionality (e.g. "partners" and "deliverables").
 
 It also provides methods for retriving defined constants, which may be
 overridden in various ways.
 
-The format of the configuration specification is described in the blah blah 
-module documentation.
+The format of the configuration specification is a standard C{.ini}-style
+file. It supports interpolation.
+
+Important highlights from the U{ConfigParser<http://docs.python.org/library/configparser.html>} documentation:
+
+  - The configuration file consists of sections, led by a C{[section]} header and followed by C{name: value} entries. C{name=value} is also accepted. 
+  - Leading whitespace is removed from values.
+  - The optional values can contain format strings which refer to other values in the same section, or values in a special DEFAULT section.
+  - Lines beginning with '#' or ';' are ignored and may be used to provide comments.
+
+See the U{ConfigParser<http://docs.python.org/library/configparser.html>} module documentation for further information.
 """
 
 import ConfigParser
@@ -441,6 +449,10 @@ class ConfigSpec(object):
         requested item. 
         @type  partner: C{str}
 
+        @return: The option in partner section of the config specification 
+        for the given name.
+        @rtype:  C{str}, unless a coercion is specified.
+
         @see: L{ConfigSpec.Get()<quickrelease.config.ConfigSpec.Get>} for a 
         comprehensive explanation of this method's other arguments and 
         possible exceptions.
@@ -461,6 +473,10 @@ class ConfigSpec(object):
         @param section: The name of the section to obtain the requested item
         from.
         @type  section: C{str}
+
+        @return: The option in specified section of the config 
+        specification for the given name.
+        @rtype:  C{str}, unless a coercion is specified.
 
         @see: L{ConfigSpec.Get()<quickrelease.config.ConfigSpec.Get>} for a 
         comprehensive explanation of this method's other arguments and 
@@ -498,9 +514,9 @@ class ConfigSpec(object):
         @type  interpOverrides: C{dict} of key-value pairs to override or 
         C{None}
 
-        @rtype:  C{str}, unless a coercion is specified.
         @return: The option specified in the config specification for the 
         given name in the current section.
+        @rtype:  C{str}, unless a coercion is specified.
 
         @raise ConfigSpecError: 
         L{SafeConfigParser<ConfigParser.SafeConfigParser>} errors are converted 

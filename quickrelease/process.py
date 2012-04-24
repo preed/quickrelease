@@ -7,7 +7,7 @@ find, load, manipulate, and run L{Process}es.
 
 L{Process}es are usually searched for in the C{quickrelease/processes} directory. This behavior can be modified by setting the B{C{QUICKRELEASE_DEFINITIONS_PATH}} to the name of a directory containing both a "processes" and "steps" directory.
 
-If you want to exclude the inclusion of any L{Process}es or L{Step<quickrelease.step.Step>}s in the standard QuickRelease directories, set B{C{QUICKRELEASE_OVERRIDE_DEFAULT_DEFINITIONS}} in the environment.
+To exclude the inclusion of any L{Process}es or L{Step<quickrelease.step.Step>}s in the standard QuickRelease directories, set B{C{QUICKRELEASE_OVERRIDE_DEFAULT_DEFINITIONS}} in the environment.
 """
 
 from glob import glob
@@ -59,6 +59,11 @@ for path in gProcessAndStepDefnPath:
             raise RuntimeWarning(INIT_PY_MISSING_ERR_STR % (checkDir))
 
 class Process(object):
+    """
+    An object representing an automated process.
+
+    L{Process}es consist of an ordered list of defined L{Step<quickrelease.step.Step} objects.
+    """
     RECOGNIZED_CONSTRUCTOR_ARGS = ('config', 'executeSteps', 'verifySteps',
      'ignoreErrors')
 

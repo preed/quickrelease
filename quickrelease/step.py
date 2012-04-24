@@ -8,7 +8,7 @@ steps.
 
 L{Step}s are usually searched for in the C{quickrelease/steps} directory. This behavior can be modified by setting the B{C{QUICKRELEASE_DEFINITIONS_PATH}} to the name of a directory containing both a "processes" and "steps" directory.
 
-If you want to exclude the inclusion of any L{Process}es or L{Step<quickrelease.step.Step>}s in the standard QuickRelease directories, set B{C{QUICKRELEASE_OVERRIDE_DEFAULT_DEFINITIONS}} in the environment.
+To exclude the inclusion of any L{Process}es or L{Step<quickrelease.step.Step>}s in the standard QuickRelease directories, set B{C{QUICKRELEASE_OVERRIDE_DEFAULT_DEFINITIONS}} in the environment.
 """
 
 import os
@@ -52,6 +52,9 @@ class _StandardStepRunner(object):
         stepObj.Notify()
 
 class Step(object):
+    """
+    An object representing a single step of a defined L{Process<quickrelease.process.Process>}
+    """
     def __init__(self, *args, **kwargs):
         """
         Construct a L{Step} object.

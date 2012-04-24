@@ -3,10 +3,10 @@
 
 r"""A defined list of constants available to QuickRelease users.
 
-The are some importnat difference between QuickRelease's L{config items<quickrelease.config>} and C{constants}:
+The are some important difference between QuickRelease's L{config items<quickrelease.config>} and C{constants}:
 
   1. C{constants} may be accessed without a L{ConfigSpec<quickrelease.config.ConfigSpec>} reference. This makes them useful in places where it may be difficult to obtain such a reference.
-  2. C{constants} can be overriden by the environment. This can be useful, but should be used sparingly, since the override is not yet logged anywhere. It's mostly intended to redefine paths to executables in different situations.  For instance, if you have a debug version of the C{unzip} utility that you would like to have a L{Process<quickrelease.process.Process>} use. You can set the C{UNZIP} environment variable, and if your process is using a constant, it will be picked up. (This is similar to L{ConfigSpec<quickrelease.config.ConfigSpec>}'s overrides, but cannot be disabled.)
+  2. C{constants} can be overriden by the environment. This can be useful, but should be used sparingly, since the override is not yet logged anywhere. It's mostly intended to redefine paths to executables in different situations.  For instance, if you have a debug version of the C{unzip} utility that you would like to have a L{Process<quickrelease.process.Process>} use. You can set the C{UNZIP} environment variable, and if your process is using a constant, it will be picked up. (This is similar to L{ConfigSpec<quickrelease.config.ConfigSpec>}'s overrides, but cannot currently be disabled.)
   3. C{constant} can return complex Python types (lists, dictionaries, etc.)
 """
 
