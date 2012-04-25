@@ -319,7 +319,7 @@ class Deliverable(object):
             self._attributeHandlers[attr] = attributeHandlerDescriptor
 
         if 'filter_attributes' in deliverableSectionItems:
-            self.filterAttributes = config.SectionGet(self._configSection,
+            self._filterAttributes = config.SectionGet(self._configSection,
              'filter_attributes', list)
 
         if self.filterAttributes is not None:
@@ -336,20 +336,21 @@ class Deliverable(object):
         """The full path to the deliverable."""
         return self.fileName
 
-    def _GetName(self): return self._deliverableClass
+    def _GetClass(self): return self._deliverableClass
     def _GetQueriedName(self): return self._queriedDeliverableClass
-    def _GetLocation(self): return self._file
-    def _GetFileName(self): return os.path.basename(self.fileName)
+    def _GetFileName(self): return self._file
+    def _GetBasename(self): return os.path.basename(self.fileName)
+    def _GetDirname(self): return os.path.dirname(self.fileName)
     def _GetRegex(self): return self._regex
     def _GetAttributes(self): return tuple(self._attributes)
 
     def _GetFilterAttributes(self):
-        if self.filterAttributes is None:
+        if self._filterAttributes is None:
             return None
         else:
             return tuple(self._filterAttributes)
 
-    name = property(_GetName)
+    name = property(_GetClass)
     """The name of the deliverable class. Read-only.
     @type: C{str}"""
 
@@ -357,11 +358,19 @@ class Deliverable(object):
     """The name of the deliverable class, including any filter attributes used. Read-only.
     @type: C{str}"""
 
-    fileName = property(_GetLocation)
+    fileName = property(_GetFileName)
     """The full path to the deliverable. Read-only.
     @type: C{str}"""
 
     file = property(_GetFileName)
+    """The full path to the deliverable. Read-only.
+    @type: C{str}"""
+
+    dirname = property(_GetDirname)
+    """The directory the deliverable is in. Read-only.
+    @type: C{str}"""
+
+    basename = property(_GetBasename)
     """The name of the file, without its path. Read-only.
     @type: C{str}"""
 
@@ -403,7 +412,7 @@ class Deliverable(object):
             return self._attributeHandlers[attribute]['handler']
         elif handlerType == Deliverable.ATTRIB_TYPE_REGEX:
             attribMatch = re.search(
-             self._attributeHandlers[attribute]['handler'], self.fileName,
+             self._attributeHandlers[attribute]['handler'], self.basename,
              self._attributeHandlers[attribute]['regexFlags'])
 
             if attribMatch is None:
@@ -601,7 +610,7 @@ def GetDeliverables(deliverableClass, deliverableDir=None):
 
     # Process the static filters, given in the config file
     for deliv in GetAllDeliverables(deliverableDir):
-        staticFilters = deliv.GetName().split(':')
+        staticFilters = deliv.name.split(':')
         staticFilterLen = len(staticFilters)
 
         filterNdx = 0
@@ -624,7 +633,7 @@ def GetDeliverables(deliverableClass, deliverableDir=None):
             filteredDeliverableList.append(retDeliv)
             continue
 
-        dynamicFilters = deliv.GetFilterAttributes()
+        dynamicFilters = deliv.filterAttributes
 
         if dynamicFilters is None and filterNdx < filterArgsLen:
             raise ValueError("GetDeliverables passed filter '%s' for a "
@@ -647,8 +656,8 @@ def GetDeliverables(deliverableClass, deliverableDir=None):
 
                 raise ValueError("GetDeliverables passed extra filter '%s' "
                  "for deliverable %s; %s defines %d filter%s: %s." % (
-                 ':'.join(filterArgs[filterNdx:]), deliv.GetName(),
-                 deliv.GetName(), filterCount, pluralFilters,
+                 ':'.join(filterArgs[filterNdx:]), deliv.name,
+                 deliv.name, filterCount, pluralFilters,
                  availableFiltersStr))
 
             if (deliv.GetAttribute(dynamicFilters[dynNdx]) != 
@@ -689,7 +698,7 @@ def GetDeliverable(deliverableClass, deliverableDir=None):
     elif len(possibleDelivs) > 1:
         raise ConfigSpecError("More than one deliverable matched for "
          "deliverable class %s: %s" % (deliverableClass,
-         ', '.join(list(x.GetLocation() for x in possibleDelivs))))
+         ', '.join(list(x.fileName for x in possibleDelivs))))
     else:
         return possibleDelivs[0]
 
