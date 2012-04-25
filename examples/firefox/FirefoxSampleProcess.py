@@ -13,6 +13,7 @@ class FirefoxGetSource(Process):
 class FirefoxBuild(Process):
     steps = [ FirefoxConfigureBuild,
               FirefoxDoBuild,
+              FirefoxDoInstallerBuild,
             ]
 
     def __init__(self, *args, **kwargs):
