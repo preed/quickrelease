@@ -49,6 +49,8 @@ Notes
 
 Calls to C{GetDeliverable('installer:mac')} and C{GetDeliverable('installer:windows')} will behave as expected.
 
+  3. When defining a regular expression for either the deliverable itself or an attribute, you may also define a C{regexflags} item in the deliverable's definition; this regex flag will be applied to all regular expressions used. See U{Python's regular expression documentation<http://docs.python.org/library/re.html#contents-of-module-re>} for a list of defined flags.
+
 Example
 =======
 
