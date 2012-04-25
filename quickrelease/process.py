@@ -62,7 +62,7 @@ class Process(object):
     """
     An object representing an automated process.
 
-    L{Process}es consist of an ordered list of defined L{Step<quickrelease.step.Step} objects.
+    L{Process}es consist of an ordered list of defined L{Step<quickrelease.step.Step>} objects.
     """
     RECOGNIZED_CONSTRUCTOR_ARGS = ('config', 'executeSteps', 'verifySteps',
      'ignoreErrors')
