@@ -3,7 +3,8 @@ from quickrelease.process import Process
 from quickrelease.steps.FirefoxSampleSteps import *
 
 class FirefoxGetSource(Process):
-    steps = [ FirefoxDownloadSource,
+    steps = [ FirefoxDownloadKeyAndSums,
+              FirefoxDownloadSource,
               FirefoxExtractSource,
             ]
 

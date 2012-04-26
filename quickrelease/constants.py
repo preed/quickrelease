@@ -12,6 +12,7 @@ The are some important difference between QuickRelease's L{config items<quickrel
 
 QUICKRELEASE_CONSTANTS = {
     'BZIP_PROG': 'bzip2',
+    'GPG' : 'gpg',
     'MAKE' : 'make',
     'MD5SUM' : 'md5sum',
     'MV' : 'mv',

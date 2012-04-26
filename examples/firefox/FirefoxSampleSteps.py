@@ -27,14 +27,30 @@ def GetObjDir(conf):
     return os.path.join(GetSourceDirRoot(conf), conf.Get('objdir'))
 
 def VerifyFirefoxDownload(conf):
-    sourceFile = os.path.basename(conf.Get('source_download_url'))
+    sourceFile = conf.Get('source_download_file')
     sourceFileFullPath = os.path.join(conf.rootDir, sourceFile)
 
     if not os.path.isfile(sourceFileFullPath):
         raise ValueError("Couldn't find downloaded firefox source code: %s" %
          (sourceFileFullPath))
 
-    sourceSha1 = conf.Get('source_checksum')
+    sha1SumsFile = os.path.basename(conf.Get('sha1_checksum_download_url'))
+
+    sha1SumHandle = open(sha1SumsFile, 'r')
+
+    sumFilePath = "./source/%s" % (sourceFile)
+    sourceSha1 = None
+    for line in sha1SumHandle.readlines():
+        (sha1, filename) = line.split(None, 1)
+        if filename.strip() == sumFilePath:
+            sourceSha1 = sha1
+            break
+
+    sha1SumHandle.close()
+
+    if sourceSha1 is None:
+        raise self.SimpleStepError("Couldn't find entry for %s in %s" %
+         (sumFilePath, sha1SumsFile))
 
     downloadSha1 = GetSHA1FileHash(sourceFileFullPath)
 
@@ -80,6 +96,97 @@ def VerifySuccessfulFirefoxBuild(conf):
         VerifyFileList(firefoxBuildTestFiles, distDir)
     except ValueError, ex:
         raise ValueError("Expected Firefox build output missing: %s" % (ex))
+
+class FirefoxDownloadKeyAndSums(Step):
+    def __init__(self, *args, **kwargs):
+        Step.__init__(self, *args, **kwargs)
+
+        self.dlFiles = [ self.config.Get('pgp_key_download_url'),
+                         self.config.Get('sha1_checksum_download_url'),
+                         self.config.Get('sha1_checksum_sig_download_url') ]
+
+    def Preflight(self):
+        PlatformCheck(self.config)
+
+    def Execute(self):
+        for f in self.dlFiles:
+            cmd = [ self.config.GetConstant('WGET'),
+                    '--progress=dot',
+                    '--no-check-certificate',
+                    f ]
+
+            rv = RunShellCommand(command=cmd,
+                                 verbose=True)
+
+    def Verify(self):
+        for f in self.dlFiles:
+            # Probably shouldn't use os.path.basename here for realsies;
+            # should really use urlparse, but for this simple case, it 
+            # seems to work fine.
+            fileName = os.path.basename(f)
+
+            if not os.path.isfile(fileName):
+                raise self.SimpleStepError("Key/checksum file %s missing." %
+                 (fileName))
+
+        keyFile = os.path.join(os.getcwd(),
+         os.path.basename(self.config.Get('sha1_checksum_sig_download_url')))
+        sha1SumsFile = os.path.join(os.getcwd(),
+         os.path.basename(self.config.Get('sha1_checksum_download_url')))
+
+        validationReqd = self.config.Get('require_pgp_validation', bool)
+
+        # Could (should?) probably do this via PyCrypto, but for example-
+        # purposes, I'm feeling lazy.
+        gpgCommand = self.config.GetConstant('GPG')
+        cmd = [ gpgCommand,
+                '--verify',
+                keyFile,
+                sha1SumsFile ]
+
+        rv = None
+        try:
+            rv = RunShellCommand(command=cmd,
+                                 verbose=True,
+                                 printOutput=False,
+                                 raiseErrors=False)
+        except ReleaseFrameworkError, ex:
+            if str(ex) == "Invalid command or working dir":
+                if validationReqd:
+                    raise self.SimpleStepError("%s validation required, but "
+                     "it looks like PGP isn't installed. Please install it."
+                     % (gpgCommand))
+
+                print >> sys.stderr, ("It appears %s isn't installed. "
+                 "Checksum cannot be considered valid. Continuing anyway..."
+                 % (gpgCommand))
+
+        #print "%s, %d, %s, %s" % (rv, rv, rv.stdout, rv.stderr)
+
+        try: 
+            if int(rv) != 0:
+                if re.search('No public key', rv.stderr[-1]):
+                    error = ("Can't validate key; please import KEY (file: %s)"
+                     % (keyFile))
+                else:
+                    error = "%s failed; exit code: %d; stderr: %s" % (
+                     gpgCommand, rv, '\n'.join(rv.stderr))
+
+                if validationReqd:
+                    raise self.SimpleStepError("%s validation required: " %
+                     (gpgCommand, error))
+                else:
+                    print >> sys.stderr, error + "; continuing anyway."
+            else:
+                if (rv.stderr[1].find('Good signature') == -1 or
+                 rv.stderr[1].find(self.config.Get('pgp_key_owner')) == -1):
+                    raise self.SimpleStepError("%s claims %s is invalid: %s" %
+                     (gpgCommand, keyFile, '\n'.join(rv.stderr)))
+        except IndexError:
+            raise self.SimpleStepError("Unexpected output from %s; bailing."
+             % gpgCommand)
+
+        print '\n'.join(rv.stderr)
 
 class FirefoxDownloadSource(Step):
     def __init__(self, *args, **kwargs):
