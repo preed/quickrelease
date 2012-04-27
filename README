@@ -64,6 +64,20 @@ QuickRelease is smart enough to find any new processes and steps that you
 put into these directories, and offer them to you, as long as they're 
 derived from quickrelease's Process and Step classes.
 
+Documentation
+-------------
+
+QuickRelease documentation is embedded in the source in the form of 
+epydoc-style markup.
+
+Generated docs are available at:
+
+http://releng-approaches.com/quickrelease/docs/
+
+In the examples/firefox directory, there is a more complex example of a set of 
+processes and steps to download the Firefox 3.6.28 source tarball, build it,
+and copy the resulting installer to /tmp.
+
 TODOs
 -----
 
@@ -73,15 +87,9 @@ top of the list to fix.
 * Better logging handling; currently, implementors of steps are mostly 
   responsible for their own logging, usually through printing to sys.stderr 
   and hoping the person running the script is capturing the output with
-  shell redirects or /usr/bin/tee. This should provided for the user by
-  quickrelease.
-
-* Better documentation on the classes/their use
+  shell redirects or /usr/bin/tee. This should provided by quickrelease.
 
 * Cygwin support (works on Win32 under MSYS/MozillaBuild)
-
-* "Property"-ize some of the classes; some of the classes are ripe to have
-  their getter/setters converted into more Pythonesque properties
 
 A comprehensive list of issues being tracked can be found at:
 
