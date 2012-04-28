@@ -65,6 +65,9 @@ QUICKRELEASE_CONSTANTS['BUILD_PLATFORMS'] = QUICKRELEASE_CONSTANTS['BUILD_PLATFO
 
 CONSTANTS_FROM_ENV_HANDLERS = {
     'BUILD_PLATFORMS': lambda val: tuple(val.split()),
+    'RUN_SHELL_COMMAND_DEFAULT_TIMEOUT': lambda val: int(val),
+    'RUN_SHELL_COMMAND_IN_MEM_LINES': lambda val: int(val),
+    'S3_PUSH_TIMEOUT': lambda val: int(val),
     'BUILD_PLATFORM_EXTENSIONS': lambda val: NotImplementedError("Need to turn BUILD_PLATFORM_EXTENSIONS overloads into a dict!"), 
     'S3_MIME_TYPES': lambda val: NotImplementedError("Need to turn S3_MIME_TYPES overloads into a dict!"), 
 }
