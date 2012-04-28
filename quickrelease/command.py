@@ -30,9 +30,11 @@ something such as U{MozProcess<https://github.com/mozautomation/mozmill/tree/b8e
 
 import errno
 import os
+import pickle
 import re
 from subprocess import PIPE
 import sys
+from tempfile import NamedTemporaryFile
 from threading import Thread
 import time
 from Queue import Queue, Empty
@@ -75,72 +77,151 @@ class _OutputQueueReader(Thread):
     def __init__(self, queue=None,
                        monitoredStreams=2,
                        logHandleDescriptors=(),
+                       storeBigOutput=True,
                        printOutput=False, bufferedOutput=False):
         Thread.__init__(self)
-        self.queue = queue
         self.printOutput = printOutput
         self.bufferedOutput = bufferedOutput
-        self.logHandleDescriptors = logHandleDescriptors
-        self.monitoredStreams = monitoredStreams
 
-        self.collectedOutput = {}
+        self._storeBigOutput = storeBigOutput
+        self._monitoredStreams = monitoredStreams
+        self._queue = queue
+        self._logHandleDescriptors = logHandleDescriptors
+        self._collectedOutput = {}
 
-        self.collectedOutput[PIPE_STDOUT] = []
-        self.collectedOutput[PIPE_STDERR] = []
+        self._collectedOutput[PIPE_STDOUT] = []
+        self._collectedOutput[PIPE_STDERR] = []
+
+        self._bigOutputFileHandle = None
+        self._maxInMemLines = ConfigSpec.GetConstant(
+         'RUN_SHELL_COMMAND_IN_MEM_LINES')
+
+    def _GetBackedByFile(self): return self._bigOutputFileHandle is not None
+    backedByFile = property(_GetBackedByFile)
 
     def run(self):
-        streamDeathCount = 0
+        try:
+            streamDeathCount = 0
 
-        while True:
-            try:
-                lineDesc = self.queue.get()
-            except Empty:
-                continue
-
-            if lineDesc.content is None:
-                #print "line content on type %s is none" % (lineObj['type'])
-                self.queue.task_done()
-                streamDeathCount += 1
-                assert (streamDeathCount >= 0 and streamDeathCount <= 
-                 self.monitoredStreams), "Stream monitor/death count mismatch!"
-                if streamDeathCount == self.monitoredStreams:
-                    break
-                else:
+            while True:
+                try:
+                    lineDesc = self._queue.get()
+                except Empty:
                     continue
 
-            if self.printOutput:
-                try:
-                    print REMOVE_LINE_ENDING(lineDesc.content)
-                    if not self.bufferedOutput:
-                        sys.stdout.flush()
-                except IOError, ex:
-                    if ex.errno != errno.EPIPE:
-                        raise ex
+                if lineDesc.content is None:
+                    #print "line content on type %s is none" % (lineObj['type'])
 
-            for h in self.logHandleDescriptors:
-                if h.handle is not None and h.type == lineDesc.type:
-                    h.handle.write(lineDesc.content)
+                    # Flush the last of our output to any big output files in
+                    # use.
+                    self._FlushBigOutputToFile(lineDesc.type)
 
-            ## TODO: if collectedOutput is too big, dump to file
-            self.collectedOutput[lineDesc.type].append(lineDesc)
+                    self._queue.task_done()
+                    streamDeathCount += 1
+                    assert (streamDeathCount >= 0 and streamDeathCount <= 
+                     self._monitoredStreams), ("Stream monitor/death count "
+                     "mismatch!")
+                    if streamDeathCount == self._monitoredStreams:
+                        break
+                    else:
+                        continue
+    
+                if self.printOutput:
+                    try:
+                        print REMOVE_LINE_ENDING(lineDesc.content)
+                        if not self.bufferedOutput:
+                            sys.stdout.flush()
+                    except IOError, ex:
+                        if ex.errno != errno.EPIPE:
+                            raise ex
+    
+                for h in self._logHandleDescriptors:
+                    if h.handle is not None and h.type == lineDesc.type:
+                        h.handle.write(lineDesc.content)
+    
+                self._collectedOutput[lineDesc.type].append(lineDesc)
+    
+                if (len(self._collectedOutput[lineDesc.type]) >
+                 self._maxInMemLines):
+                    self._FlushBigOutputToFile(lineDesc.type)
+    
+                self._queue.task_done()
+    
+            for h in self._logHandleDescriptors:
+                if h.handle is not None:
+                    h.handle.flush()
 
-            self.queue.task_done()
+        finally:
+            if self._bigOutputFileHandle is not None:
+                self._bigOutputFileHandle.close()
 
-        for h in self.logHandleDescriptors:
-            if h.handle is not None:
-                h.handle.flush()
+    def __del__(self):
+        if self._bigOutputFileHandle is not None:
+            try:
+                self._bigOutputFileHandle.close()
+                os.unlink(self._bigOutputFileHandle.name)
+            except OSError:
+                pass
+
+    # To simplify the logic in the caller, this function MAY BE A NO-OP
+    def _FlushBigOutputToFile(self, outputType):
+        if self._storeBigOutput:
+            if self._bigOutputFileHandle is None:
+                self._bigOutputFileHandle = NamedTemporaryFile(delete=False)
+
+            # Make sure someone else didn't accidentally close() the handle
+            assert not self._bigOutputFileHandle.closed, ("bigOutputFileHandle "
+             "is closed?")
+            pickle.dump( { 'type': outputType,
+                           'contents': self._collectedOutput[outputType]
+            }, self._bigOutputFileHandle)
+            #self._bigOutputFileHandle.flush()
+
+            self._collectedOutput[outputType] = []
 
     def GetOutput(self, outputType=PIPE_STDOUT, raw=False):
-        if not self.collectedOutput.has_key(outputType):
+        if not self._collectedOutput.has_key(outputType):
             raise ValueError("No output type %s processed by this output "
              "monitor" % (outputType))
 
-        if raw:
-            return ''.join(list(x.content for x in
-             self.collectedOutput[outputType]))
+        if self._bigOutputFileHandle is not None:
+            # At this point, the handle should always be closed.
+            assert self._bigOutputFileHandle.closed, ("bigOutputFileHandle "
+             "still open?")
+            print >> sys.stderr, "In GetOutput(): %d" % (time.time())
+            handle = open(self._bigOutputFileHandle.name, 'rb')
+            ret = []
+            if raw:
+                ret = ''
+
+            try:
+                while True:
+                    try:
+                        data = pickle.load(handle)
+                    except EOFError:
+                        break
+
+                    if data['type'] == outputType:
+                        if raw:
+                            ret += ''.join(list(x.content for x in 
+                             data['contents']))
+
+                        else:
+                            ret += list(REMOVE_LINE_ENDING(x.content) for x in
+                             data['contents'])
+            finally:
+                handle.close()
+
+            print >> sys.stderr, "Leaving GetOutput(): %d" % (time.time())
+            return ret
+
         else:
-            return list(REMOVE_LINE_ENDING(x.content) for x in
-             self.collectedOutput[outputType])
+            if raw:
+                return ''.join(list(x.content for x in
+                 self._collectedOutput[outputType]))
+            else:
+                return list(REMOVE_LINE_ENDING(x.content) for x in
+                 self._collectedOutput[outputType])
 
 class RunShellCommandError(ReleaseFrameworkError):
     """
@@ -188,6 +269,7 @@ RUN_SHELL_COMMAND_DEFAULT_ARGS = {
  'verbose': False,
  'workdir': None,
  'input': None,
+ 'storeBigOutput': True,
 }
 
 # RunShellCommand may seem a bit weird, but that's because it was originally a
@@ -288,6 +370,13 @@ class RunShellCommand(object):
         when the command is executed.
         @type input: C{str} or C{file}
 
+        @param storeBigOutput: Store output from programs over a set amount
+        in a temporary file, instead of memory. This is useful for long-running
+        build processes which generate a lot of output that you don't want to
+        waste memory in the Python process storing.
+        Default: store large output in temporary files (C{True})
+        @type storeBigOutput: C{bool}
+
         @raise ValueError: when invalid argument values or initialization 
         formats (keyword vs. singular array) are mixed, a ValueError will be 
         raised.
@@ -321,12 +410,14 @@ class RunShellCommand(object):
 
         self._processWasKilled = False
         self._processTimedOut = False
-        self._stdout = None
-        self._rawstdout = None
-        self._stderr = None
         self._startTime = None
         self._endTime = None
         self._returncode = None
+
+        self._stdout = None
+        self._rawstdout = None
+        self._stderr = None
+        self._outputMonitor = None
         self._stdin = None
 
         if self._input is not None:
@@ -396,9 +487,12 @@ class RunShellCommand(object):
             self.Run()
 
     def _GetCommand(self): return self._command
-    def _GetStdout(self): return self._stdout
-    def _GetRawStdout(self): return self._rawstdout
-    def _GetStderr(self): return self._stderr
+    def _GetStdout(self): return self._GetOutputFromMonitor(PIPE_STDOUT)
+    def _GetRawStdout(self): return self._GetOutputFromMonitor(PIPE_STDOUT,
+     True)
+    def _GetStderr(self): return self._GetOutputFromMonitor(PIPE_STDERR)
+    def _GetRawStderr(self): return self._GetOutputFromMonitor(PIPE_STDERR,
+     True)
     def _GetStartTime(self): return self._startTime
     def _GetEndTime(self): return self._endTime
     def _GetReturnCode(self): return self._returncode
@@ -406,6 +500,16 @@ class RunShellCommand(object):
     def _GetProcessTimedOut(self): return self._processTimedOut
     def _GetWorkDir(self): return self._workdir
     def _GetTimeout(self): return self._timeout
+
+    def _GetOutputFromMonitor(outputType, raw=False):
+        if self._outputMonitor is None:
+            return None
+        return self._outputMonitor.GetOutput(outputType, raw)
+
+    def _GetOutputBackedByFile(self): 
+        if self._outputMonitor is None:
+            return False
+        return self._outputMonitor.backedByFile
 
     def _GetRunningTime(self):
         if self._startTime is None or self._endTime is None:
@@ -466,6 +570,10 @@ class RunShellCommand(object):
     timeout = property(_GetTimeout)
     """The timeout value the command was executed with. Read-only.
     @type: C{int}"""
+    
+    outputBackedByFile = property(_GetOutputBackedByFile)
+    """Whether any output from this RunShellCommand object uses a file-based backing-store. Read-only.
+    @type: C{bool}"""
 
     DEFAULT__STR__SEPARATOR = ','
     str__separator = DEFAULT__STR__SEPARATOR
@@ -572,12 +680,12 @@ class RunShellCommand(object):
             stderrReader = Thread(target=_EnqueueOutput,
              name="RunShellCommand() stderr reader",
              args=(process.stderr, outputQueue, PIPE_STDERR))
-            outputMonitor = _OutputQueueReader(queue=outputQueue,
+            self._outputMonitor = _OutputQueueReader(queue=outputQueue,
              logHandleDescriptors=logDescs, printOutput=self._printOutput)
 
             stdoutReader.start()
             stderrReader.start()
-            outputMonitor.start()
+            self._outputMonitor.start()
 
             try:
                 # If you're not using killable process, you theoretically have 
@@ -608,7 +716,7 @@ class RunShellCommand(object):
                 #print >> sys.stderr, "Joining stdoutReader"
                 stdoutReader.join()
                 #print >> sys.stderr, "Joining outputMonitor"
-                outputMonitor.join()
+                self._outputMonitor.join()
                 #print >> sys.stderr, "Joining q"
                 outputQueue.join()
                 if stdinWriter is not None:
@@ -634,10 +742,10 @@ class RunShellCommand(object):
                 #     print "STDERR line %d (%d): %s" % (i, om[i].time,
                 #      om[i].content)
 
-                self._stdout = outputMonitor.GetOutput(PIPE_STDOUT)
-                self._rawstdout = outputMonitor.GetOutput(PIPE_STDOUT,
-                 raw=True)
-                self._stderr = outputMonitor.GetOutput(PIPE_STDERR)
+                #self._stdout = outputMonitor.GetOutput(PIPE_STDOUT)
+                #self._rawstdout = outputMonitor.GetOutput(PIPE_STDOUT,
+                # raw=True)
+                #self._stderr = outputMonitor.GetOutput(PIPE_STDERR)
                 self._endTime = procEndTime
                 self._returncode = process.returncode
 

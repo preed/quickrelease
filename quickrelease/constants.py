@@ -39,6 +39,10 @@ QUICKRELEASE_CONSTANTS = {
     # in seconds, so five minutes
     'RUN_SHELL_COMMAND_DEFAULT_TIMEOUT': 60 * 5,
 
+    # Number of output lines, by default, for quickrelease.command to store
+    # in memory before dumping to a file backing-store.
+    'RUN_SHELL_COMMAND_IN_MEM_LINES': 20000,
+
     # in seconds, so 10 mintues.
     'S3_PUSH_TIMEOUT': 60 * 10,
 
