@@ -2,13 +2,13 @@
 import os
 import re
 import shutil
+import sys
 import tempfile
-import time
 
 from quickrelease.command import RunShellCommand
 from quickrelease.deliverable import FindDeliverables, GetDeliverable, GetAllDeliverables
 from quickrelease.exception import ReleaseFrameworkError
-from quickrelease.step import Step, StepError
+from quickrelease.step import Step
 from quickrelease.utils import GetBuildPlatform, GetSHA1FileHash
 
 def PlatformCheck(conf):
@@ -49,7 +49,7 @@ def VerifyFirefoxDownload(conf):
     sha1SumHandle.close()
 
     if sourceSha1 is None:
-        raise self.SimpleStepError("Couldn't find entry for %s in %s" %
+        raise ValueError("Couldn't find entry for %s in %s" %
          (sumFilePath, sha1SumsFile))
 
     downloadSha1 = GetSHA1FileHash(sourceFileFullPath)
@@ -173,7 +173,7 @@ class FirefoxDownloadKeyAndSums(Step):
                      gpgCommand, rv, '\n'.join(rv.stderr))
 
                 if validationReqd:
-                    raise self.SimpleStepError("%s validation required: " %
+                    raise self.SimpleStepError("%s validation required: %s" %
                      (gpgCommand, error))
                 else:
                     print >> sys.stderr, error + "; continuing anyway."
