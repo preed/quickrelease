@@ -631,7 +631,7 @@ def GetDeliverables(deliverableClass, deliverableDir=None):
         # If we've parsed all of the filter arguments, we're done
         if filterNdx == filterArgsLen:
             retDeliv = copy.deepcopy(deliv)
-            retDeliv.queriedDeliverableClass = deliverableClass
+            retDeliv._queriedDeliverableClass = deliverableClass
             filteredDeliverableList.append(retDeliv)
             continue
 
@@ -673,7 +673,7 @@ def GetDeliverables(deliverableClass, deliverableDir=None):
             continue
 
         retDeliv = copy.deepcopy(deliv)
-        retDeliv.queriedDeliverableClass = deliverableClass
+        retDeliv._queriedDeliverableClass = deliverableClass
         filteredDeliverableList.append(retDeliv)
 
     return filteredDeliverableList
