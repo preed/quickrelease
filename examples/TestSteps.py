@@ -7,9 +7,9 @@ class TestStepOne(Step):
 
     def Execute(self):
         print "EXECUTE TestStepOne."
-        print "    Release version: %s" % (self.GetConfig().Get('version'))
+        print "    Release version: %s" % (self.config.Get('version'))
         print "    Release build number: %s" % (
-         self.GetConfig().Get('build_number'))
+         self.config.Get('build_number'))
 
     def Verify(self):
         print "VERIFY TestStepOne."
@@ -21,14 +21,14 @@ class TestPartnerStepTwo(PartnerStep):
     
     def Preflight(self):
         print "PREFLIGHT TestPartnerStepTwo with partner %s." % (
-         self.GetActivePartner())
+         self.activePartner)
 
     def Execute(self):
         print "EXECUTE TestPartnerStepTwo."
-        print "    Partner: %s" % (self.GetActivePartner())
-        print "    Version: %s" % (self.GetConfig().Get('version'))
+        print "    Partner: %s" % (self.activePartner)
+        print "    Version: %s" % (self.config.Get('version'))
         print "    Partner build number: %s" % (
-         self.GetConfig().SectionGet('common', 'partner_build_number'))
+         self.config.SectionGet('common', 'partner_build_number'))
 
     def Verify(self):
         print "VERIFY TestPartnerStepTwo."
@@ -45,5 +45,5 @@ class TestStepThree(Step):
     def Verify(self):
         print "VERIFY TestStepThree:"
         print "    Verifying version still: %s" % (
-         self.GetConfig().Get('version'))
+         self.config.Get('version'))
         print
