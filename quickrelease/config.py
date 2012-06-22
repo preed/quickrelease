@@ -31,6 +31,20 @@ import re
 from quickrelease import constants
 from quickrelease.exception import ReleaseFrameworkError
 
+def ConfSpecErrorIsMissingError(confSpecErrDeets):
+    """
+    A convenience method to easily determine whether a
+    L{ConfigSpecError<quickrelease.config.ConfigSpecError>} is just a missing
+    option error.
+
+    In some cases, this may be acceptable. However, it is preferable to not
+    swallow all L{ConfigSpecError<quickrelease.config.ConfigSpecError>}s, since
+    this can be confusing when the program assumes the error isn't, for
+    instance, and interpolation error, etc.
+    """
+    return confSpecErrDeets in (ConfigSpecError.NO_SECTION_ERROR,
+     ConfigSpecError.NO_OPTION_ERROR)
+
 class ConfigSpecError(ReleaseFrameworkError):
     """
     An exception class representing various errors that can occur with 
@@ -253,7 +267,7 @@ class ConfigSpec(object):
             self._allowOverrides = self.SectionGet(ConfigSpec.DEFAULT_SECTION,
              'allow_config_overrides', bool)
         except ConfigSpecError, ex:
-            if ConfigSpecError.NO_OPTION_ERROR != ex.details:
+            if not ConfSpecErrorIsMissingError(ex.details):
                 raise ex
 
         if len(overrides) != 0:

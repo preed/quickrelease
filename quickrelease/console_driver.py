@@ -39,7 +39,7 @@ from optparse import OptionParser
 import os
 import sys
 
-from quickrelease.config import ConfigSpec, ConfigSpecError
+from quickrelease.config import ConfigSpec, ConfigSpecError, ConfSpecErrorIsMissingError
 from quickrelease.exception import ReleaseFrameworkError
 from quickrelease.log import Logger
 from quickrelease.process import GetAvailableProcessesList, GetProcessByName
@@ -189,8 +189,7 @@ def main():
         try:
             options.verbose = configSpec.SectionGet('quickrelease', 'verbose')
         except ConfigSpecError, ex:
-            if ex.details not in (ConfigSpecError.NO_SECTION_ERROR,
-              ConfigSpecError.NO_OPTION_ERROR):
+            if not ConfSpecErrorIsMissingError(ex.details):
                 raise ex
 
     if options.runOneStep:

@@ -310,7 +310,7 @@ class Deliverable(object):
                          'regexflags').strip()
                         regexFlags = eval(regexFlagsStr) 
                     except ConfigSpecError, ex:
-                        if ex.details != ConfigSpecError.NO_OPTION_ERROR:
+                        if not ConfSpecErrorIsMissingError(ex.details):
                             raise ex
 
                     attributeHandlerDescriptor['regexFlags'] = regexFlags
@@ -463,7 +463,7 @@ def FindDeliverables(deliverableDir, config):
         ignoreUndefinedDeliverables = config.Get(
          'ignore_undefined_deliverables', bool)
     except ConfigSpecError, ex:
-        if ex.details != ConfigSpecError.NO_OPTION_ERROR:
+        if not ConfSpecErrorIsMissingError(ex.details):
             raise ex
 
     for root, dirs, files in os.walk(deliverableDir):
@@ -491,7 +491,7 @@ def FindDeliverables(deliverableDir, config):
                          'regexflags').strip()
                         regexFlags = eval(regexFlagsStr)
                     except ConfigSpecError, ex:
-                        if ex.details != ConfigSpecError.NO_OPTION_ERROR:
+                        if not ConfSpecErrorIsMissingError(ex.details):
                             raise ex
 
                 else:
