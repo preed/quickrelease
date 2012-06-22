@@ -152,11 +152,11 @@ class _OutputQueueReader(Thread):
                     h.handle.flush()
 
         finally:
-            if self._bigOutputFileHandle is not None:
+            if self.backedByFile:
                 self._bigOutputFileHandle.close()
 
     def __del__(self):
-        if self._bigOutputFileHandle is not None:
+        if self.backedByFile:
             try:
                 self._bigOutputFileHandle.close()
                 os.unlink(self._bigOutputFileHandle.name)
