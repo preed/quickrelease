@@ -188,7 +188,7 @@ class _OutputQueueReader(Thread):
             # At this point, the handle should always be closed.
             assert self._bigOutputFileHandle.closed, ("bigOutputFileHandle "
              "still open?")
-            print >> sys.stderr, "In GetOutput(): %d" % (time.time())
+            ## print >> sys.stderr, "In GetOutput(): %d" % (time.time())
             handle = open(self._bigOutputFileHandle.name, 'rb')
             ret = []
             if raw:
@@ -212,7 +212,7 @@ class _OutputQueueReader(Thread):
             finally:
                 handle.close()
 
-            print >> sys.stderr, "Leaving GetOutput(): %d" % (time.time())
+            ## print >> sys.stderr, "Leaving GetOutput(): %d" % (time.time())
             return ret
 
         else:
