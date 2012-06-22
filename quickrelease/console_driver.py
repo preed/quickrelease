@@ -41,6 +41,7 @@ import sys
 
 from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.exception import ReleaseFrameworkError
+from quickrelease.log import Logger
 from quickrelease.process import GetAvailableProcessesList, GetProcessByName
 from quickrelease.utils import PrintReleaseFrameworkError
 
@@ -75,6 +76,11 @@ def main():
                  action='store_true',
                  help="Ignore any errors encountered while running; continue "
                  "on with the next steps")
+    o.add_option('-L', '--logDir ', dest='logDir', default=None,
+                 help="Directory to store log files for a process in."
+                 "Default: the root directory; if any logs are requested (see "
+                 "the --verbose argument),they will be dumped in the specifed "
+                 "root directory (see the --root argument)")
     o.add_option('-l', '--list', dest='showList', default=False,
                  action='store_true',
                  help="List all available processes or, if with -p, "
@@ -88,6 +94,22 @@ def main():
     o.add_option('-V', '--verify-only', dest='verifyOnly', default=False,
                  action='store_true',
                  help="Only run the Verify portion of the specified steps.")
+    o.add_option('-v', '--verbose', dest='verbose', default=None,
+                 help="Set the verbosity level using a string of "
+                 "'level:output', pairs separated by commas. may be specifed "
+                 "to the same destination. Possible levels are: 0 (only error "
+                 "messages and exceptions), 1 (log messages from "
+                 "steps/processes), 2 (debug messages from steps/processes), "
+                 "and 3 (internal QuickRelease debugging messages). Higher "
+                 "levels include all the levels below them. Output can be one "
+                 "of 'dir' (see --logDir), console (stderr for errors, stdout "
+                 "for all else); or a path to a file to dump all output of "
+                 "that type to. Defult: '1:console', i.e. all error messages, "
+                 "exceptions, and log messgaes from steps/processes logged to "
+                 "the console. If --logDir is specified, the default becomes: "
+                 "'1:console,2:dir'. NOTE: this option can also set in the "
+                 "config file; if this is done, all commandline parameters "
+                 "will be added to it.")
     o.add_option('-X', '--execute-only', dest='executeOnly', default=False,
                  action='store_true',
                  help="Only run the Execute portion of the specified steps.")
@@ -163,6 +185,14 @@ def main():
         print >> sys.stderr, str(ex)
         return -1
 
+    if options.verbose is None:
+        try:
+            options.verbose = configSpec.SectionGet('quickrelease', 'verbose')
+        except ConfigSpecError, ex:
+            if ex.details not in (ConfigSpecError.NO_SECTION_ERROR,
+              ConfigSpecError.NO_OPTION_ERROR):
+                raise ex
+
     if options.runOneStep:
         stepsToRun = 1
     else:
@@ -182,7 +212,8 @@ def main():
             processToRun = GetProcessByName(options.process,
              config=configSpec, verifySteps=not options.executeOnly,
              executeSteps=not options.verifyOnly,
-             ignoreErrors=options.ignoreErrors)
+             ignoreErrors=options.ignoreErrors,
+             logger=Logger(config=options.verbose, logDirectory=options.logDir))
 
             if processToRun is None:
                 raise ValueError("Unknown process: %s" % (options.process))

@@ -79,12 +79,38 @@ class Step(object):
         """The L{Step}'s name."""
         return self.__class__.__name__ 
 
+    def _GetName(self): return str(self)
     def _GetRunner(self): return self._runner
     def _GetParentProcess(self): return self._parentProcess
     def _GetConfig(self):
         if self.process is None:
             return None
         return self.process.config
+
+    def _GetLogger(self):
+        if self.process is None:
+            raise self.SimpleStepError("%s has no associated process to "
+             "obtain a Logger." % (self))
+        elif self.process.logger is None:
+            raise self.SimpleStepError("Process %s has no associated Logger."
+             % (self.process))
+        else:
+            return self.process.logger
+
+    def Log(self, msg):
+        return self.logger.Log(msg, step=self)
+    
+    def LogErr(self, msg):
+        return self.logger.LogErr(msg, step=self)
+
+    def LogDebug(self, msg):
+        return self.logger.LogDebug(msg, step=self)
+
+    def ShellCommandLog(self, combined=True):
+        # TODO: handle to a named file for a log command
+        pass
+
+    name = property(_GetName)
 
     runner = property(_GetRunner)
     """Return the runner object responsible for running the parts of the step. Read-only.
@@ -97,6 +123,12 @@ class Step(object):
     process = property(_GetParentProcess) 
     """The process this step is a part of, if any. Read-only.
     @type: L{Process<quickrelease.process.Process>}"""
+
+    logger = property(_GetLogger)
+    """The logger associated with the L{Step}'s parent process, if any. Read-only.
+    @type: L{Logger<quickrelease.logger.Logger>} or C{None}."""
+
+
 
     def Preflight(self):
         """

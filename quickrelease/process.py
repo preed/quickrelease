@@ -65,7 +65,7 @@ class Process(object):
     L{Process}es consist of an ordered list of defined L{Step<quickrelease.step.Step>} objects.
     """
     RECOGNIZED_CONSTRUCTOR_ARGS = ('config', 'executeSteps', 'verifySteps',
-     'ignoreErrors')
+     'ignoreErrors', 'logger')
 
     _gAvailableProcessList = None
 
@@ -101,6 +101,7 @@ class Process(object):
         self._everHadErrors = False
         self._enableNotifications = False
         self._stepNames = None
+        self._logger = None
 
         for arg in Process.RECOGNIZED_CONSTRUCTOR_ARGS:
             if kwargs.has_key(arg):
@@ -117,6 +118,7 @@ class Process(object):
         return cmp(str(self), str(other))
 
     def _GetConfig(self): return self._config
+    def _GetLogger(self): return self._logger
     def _HadErrors(self): return self._everHadErrors
 
     def _GetProcessStepNames(self):
@@ -159,6 +161,7 @@ class Process(object):
     """Instantiated L{Step<quickrelease.step.Step>} objects comprising this L{Process}. Read-only.
     @type: C{list} of L{Step<quickrelease.step.Step>}"""
 
+    logger = property(_GetLogger)
 
     def Run(self, startingStepName=None, stepsToRun=None):
         """
