@@ -79,7 +79,7 @@ class ConfigSpecError(ReleaseFrameworkError):
 
 OVERRIDES_DISABLED_ERR_STR = ("Commandline variable overrides are not enabled "
  "in config file %s; enable them by setting 'allow_config_overrides' in the "
- "default section.")
+ "'quickrelease' section.")
 
 class ConfigSpec(object):
     """
@@ -207,8 +207,9 @@ class ConfigSpec(object):
         is: "section:key=value" Section may be omitted, and in this case, the 
         override is added to the default section.
 
-        B{Note}: the allow_config_overrides item B{must} be set in the config 
-        file, or an exception will be raised if any are provided. 
+        B{Note}: the 'allow_config_overrides' item B{must} be set in the config 
+        file in the 'quickrelease' section, or an exception will be raised if
+        any are provided. 
         @type  overrides: C{list} of C{str}
 
         @return:  C{ConfigSpec} reference
@@ -264,7 +265,7 @@ class ConfigSpec(object):
         self._ResetPartnerDefaultSectionVars()
   
         try:
-            self._allowOverrides = self.SectionGet(ConfigSpec.DEFAULT_SECTION,
+            self._allowOverrides = self.SectionGet('quickrelease',
              'allow_config_overrides', bool)
         except ConfigSpecError, ex:
             if not ConfSpecErrorIsMissingError(ex.details):

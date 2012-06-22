@@ -460,7 +460,7 @@ def FindDeliverables(deliverableDir, config):
 
     ignoreUndefinedDeliverables = True 
     try:
-        ignoreUndefinedDeliverables = config.Get(
+        ignoreUndefinedDeliverables = config.SectionGet('quickrelease',
          'ignore_undefined_deliverables', bool)
     except ConfigSpecError, ex:
         if not ConfSpecErrorIsMissingError(ex.details):

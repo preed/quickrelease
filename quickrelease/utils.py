@@ -45,7 +45,7 @@ def GetDeliverableRootPath(configSpec):
     @return: The path to the deliverable storage area, as defined by the user.
     @rtype: C{str}
     """
-    return os.path.join(configSpec.Get('root_dir'),
+    return os.path.join(configSpec.rootDir,
      configSpec.SectionGet('deliverables', 'release_deliverables_dir'))
 
 def GetActivePartners(configSpec):
