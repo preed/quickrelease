@@ -241,6 +241,12 @@ class ConfigSpec(object):
                 raise ConfigSpecError("Invalid initial section '%s'" %
                  (section))
 
+        for section in self.sectionList:
+            if ConfigSpec._IsPartnerSection(section):
+                for item in self.GetSectionItems(section):
+                    self.rawConfig.set(ConfigSpec.DEFAULT_SECTION,
+                     'PARTNER_%s' % (item), '')
+
         self._ResetPartnerDefaultSectionVars()
   
         try:
@@ -293,6 +299,8 @@ class ConfigSpec(object):
         #pprint.pprint(self._clOverrides)
         #print "Initial defaults: "
         #pprint.pprint(self.GetRawConfig().defaults())
+        #print ', '.join(self.rawConfig.defaults())
+        self._DefaultSectionPartnerSanityCheck()
 
     def _GetRootDir(self): return self._rootDir
     def _GetRawConfig(self): return self._configSpec
@@ -389,13 +397,21 @@ class ConfigSpec(object):
     Read-only.
     @type: C{list}"""
 
+    def _DefaultSectionPartnerSanityCheck(self):
+        for key in self.rawConfig.defaults().keys():
+            if re.match('^PARTNER_', key, re.I):
+                assert self.rawConfig.get(ConfigSpec.DEFAULT_SECTION,
+                 key) == '', "Invalid Key."
+
     def _ResetPartnerDefaultSectionVars(self):
         for key in self.rawConfig.defaults().keys():
             if re.match('^PARTNER_', key, re.I):
-                self.rawConfig.remove_option(ConfigSpec.DEFAULT_SECTION, key)
+                self.rawConfig.set(ConfigSpec.DEFAULT_SECTION, key, '')
+                #rv = self.rawConfig.remove_option(ConfigSpec.DEFAULT_SECTION, key)
+                #print "set for %s: %s" % (key, rv)
 
-        # DBUG
-        # pprint.pprint(self.rawConfig.defaults())
+        self._DefaultSectionPartnerSanityCheck()
+        #print ', '.join(self.rawConfig.defaults())
 
     def SetPartnerSection(self, partner):
         """
@@ -427,11 +443,17 @@ class ConfigSpec(object):
         self._ResetPartnerDefaultSectionVars()
 
         for item in self.sectionElements:
-            self.rawConfig.set(ConfigSpec.DEFAULT_SECTION,
-             "PARTNER_%s" % (item[0]), item[1])
+            if not re.match('^PARTNER_', item[0], re.I):
+                #print "Setting PARTNER_%s=%s" % (item[0], item[1])
+                self.rawConfig.set(ConfigSpec.DEFAULT_SECTION,
+                 "PARTNER_%s" % (item[0]), item[1])
+
+        #print ', '.join(self.rawConfig.defaults())
+        #print "really? %s" % (self.rawConfig.has_option(ConfigSpec.DEFAULT_SECTION, 'partner_build_number'))
 
         if self._clOverrides.has_key(partnerSectionName):
             for overrideKey in self._clOverrides[partnerSectionName]:
+                #print "Setting PARTNER_%s=%s" % (item[0], item[1])
                 self.rawConfig.set(ConfigSpec.DEFAULT_SECTION,
                  "PARTNER_%s" % (overrideKey),
                  self._clOverrides[partnerSectionName][overrideKey])
