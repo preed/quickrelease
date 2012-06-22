@@ -191,7 +191,7 @@ def main():
              stepsToRun=stepsToRun)
 
             processHadErrors = processToRun.errored
-        except ValueError, ex:
+        except (ValueError, NotImplementedError), ex:
             print >> sys.stderr, ex
             return -1
         except ReleaseFrameworkError, ex:
