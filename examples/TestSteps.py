@@ -6,13 +6,13 @@ class TestStepOne(Step):
         Step.__init__(self, *args, **kwargs)
 
     def Execute(self):
-        print "EXECUTE TestStepOne."
+        print "EXECUTE %s." % (self)
         print "    Release version: %s" % (self.config.Get('version'))
         print "    Release build number: %s" % (
          self.config.Get('build_number'))
 
     def Verify(self):
-        print "VERIFY TestStepOne."
+        print "VERIFY %s." % (self)
         print
 
 class TestPartnerStepTwo(PartnerStep):
@@ -20,30 +20,29 @@ class TestPartnerStepTwo(PartnerStep):
         PartnerStep.__init__(self, *args, **kwargs)
     
     def Preflight(self):
-        print "PREFLIGHT TestPartnerStepTwo with partner %s." % (
-         self.activePartner)
+        print "PREFLIGHT %s with partner %s." % (self, self.activePartner)
 
     def Execute(self):
-        print "EXECUTE TestPartnerStepTwo."
+        print "EXECUTE %s." % (self)
         print "    Partner: %s" % (self.activePartner)
         print "    Version: %s" % (self.config.Get('version'))
         print "    Partner build number: %s" % (
          self.config.SectionGet('common', 'partner_build_number'))
 
     def Verify(self):
-        print "VERIFY TestPartnerStepTwo."
-
+        print "VERIFY %s." % (self)
+        print
 
 class TestStepThree(Step):
     def __init__(self, *args, **kwargs):
         Step.__init__(self, *args, **kwargs)
     
     def Execute(self):
+        print "EXECUTE %s." % (self)
         print
-        print "EXECUTE TestStepThree."
 
     def Verify(self):
-        print "VERIFY TestStepThree:"
+        print "VERIFY %s:" % (self)
         print "    Verifying version still: %s" % (
          self.config.Get('version'))
         print
