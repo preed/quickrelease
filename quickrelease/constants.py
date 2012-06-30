@@ -39,6 +39,10 @@ QUICKRELEASE_CONSTANTS = {
     # in seconds, so five minutes
     'RUN_SHELL_COMMAND_DEFAULT_TIMEOUT': 60 * 5,
 
+    # A way to increase the default via the environment for instances
+    # where you're running in slow(er) environments, e.g. virtualization
+    'RUN_SHELL_COMMAND_TIMEOUT_FACTOR': 1,
+
     # Number of output lines, by default, for quickrelease.command to store
     # in memory before dumping to a file backing-store.
     'RUN_SHELL_COMMAND_IN_MEM_LINES': 20000,
@@ -66,6 +70,7 @@ QUICKRELEASE_CONSTANTS['BUILD_PLATFORMS'] = QUICKRELEASE_CONSTANTS['BUILD_PLATFO
 CONSTANTS_FROM_ENV_HANDLERS = {
     'BUILD_PLATFORMS': lambda val: tuple(val.split()),
     'RUN_SHELL_COMMAND_DEFAULT_TIMEOUT': lambda val: int(val),
+    'RUN_SHELL_COMMAND_TIMEOUT_FACTOR': lambda val: int(val),
     'RUN_SHELL_COMMAND_IN_MEM_LINES': lambda val: int(val),
     'S3_PUSH_TIMEOUT': lambda val: int(val),
     'BUILD_PLATFORM_EXTENSIONS': lambda val: NotImplementedError("Need to turn BUILD_PLATFORM_EXTENSIONS overloads into a dict!"), 

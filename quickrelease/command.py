@@ -264,7 +264,8 @@ RUN_SHELL_COMMAND_DEFAULT_ARGS = {
  'errorLogfile': None,
  'logfile': None,
  'printOutput': None,
- 'timeout': ConfigSpec.GetConstant('RUN_SHELL_COMMAND_DEFAULT_TIMEOUT'),
+ 'timeout': (ConfigSpec.GetConstant('RUN_SHELL_COMMAND_DEFAULT_TIMEOUT') *
+     ConfigSpec.GetConstant('RUN_SHELL_COMMAND_TIMEOUT_FACTOR')),
  'raiseErrors': True,
  'verbose': False,
  'workdir': None,
