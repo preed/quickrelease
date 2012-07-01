@@ -12,6 +12,8 @@ The are some important difference between QuickRelease's L{config items<quickrel
 
 QUICKRELEASE_CONSTANTS = {
     'ANT' : 'ant',
+    # This has the _PROG suffix because bzip2 uses the BZIP/BZIP2 env 
+    # variables as another way to read its arguments (!!?)
     'BZIP_PROG': 'bzip2',
     'GPG' : 'gpg',
     'JAR' : 'jar',
