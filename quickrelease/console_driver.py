@@ -42,9 +42,14 @@ import sys
 from quickrelease.config import ConfigSpec, ConfigSpecError, ConfSpecErrorIsMissingError
 from quickrelease.exception import ReleaseFrameworkError
 from quickrelease.log import Logger
-from quickrelease.process import GetAvailableProcessesList, GetProcessByName
 from quickrelease.utils import PrintReleaseFrameworkError
 
+try:
+    from quickrelease.process import GetAvailableProcessesList, GetProcessByName
+except RuntimeWarning, ex:
+    print >> sys.stderr, ex
+    sys.exit(1)
+   
 QUICK_RELEASE_VERSION = '0.15.0pre'
 
 gRootDir = None
