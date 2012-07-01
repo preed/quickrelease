@@ -13,12 +13,12 @@ import sys
 from quickrelease.config import ConfigSpec
 from quickrelease.utils import Makedirs
 
-_LEVEL_MAP = [
-                        logging.ERROR,
-                        logging.WARNING,
-                        logging.INFO,
-                        logging.DEBUG 
-                      ]
+_LEVEL_MAP = [ 
+              logging.ERROR,
+              logging.WARNING,
+              logging.INFO,
+              logging.DEBUG 
+             ]
 
 _CONSOLE_OUTPUT = 'console'
 _DIR_OUTPUT = 'dir'
@@ -40,6 +40,7 @@ class Logger(object):
     An object representing a handle to a QuickRelease Logger, which is, in turn,
     a wrapper around Python's own L{logging} module.
     """
+
     RECOGNIZED_CONSTRUCTOR_ARGS = ('config', 'logDirectory', 'prefixMessages',
      'timestampMessages')
 
@@ -54,13 +55,13 @@ class Logger(object):
                 (level, output) = part.split(':')
                 level = int(level)
                 output = output.strip()
-            except ValueError:
+            except (ValueError, AttributeError):
                 # Handle int()s that fail and non-string objects that can't
                 # strip()
                 raise ValueError("Invalid logging config part: %s" % (part))
 
             levelRange = range(len(_LEVEL_MAP))
-            if not level in levelRange:
+            if level not in levelRange:
                 raise ValueError("Invalid logging level '%d'; must be %d-%d" %
                  (level, min(levelRange), max(levelRange)))
        
