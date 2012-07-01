@@ -15,6 +15,7 @@ QUICKRELEASE_CONSTANTS = {
     # This has the _PROG suffix because bzip2 uses the BZIP/BZIP2 env 
     # variables as another way to read its arguments (!!?)
     'BZIP_PROG': 'bzip2',
+    'GIT' : 'git',
     'GPG' : 'gpg',
     'JAR' : 'jar',
     'MAKE' : 'make',
