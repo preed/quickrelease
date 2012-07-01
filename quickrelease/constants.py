@@ -11,8 +11,10 @@ The are some important difference between QuickRelease's L{config items<quickrel
 """
 
 QUICKRELEASE_CONSTANTS = {
+    'ANT' : 'ant',
     'BZIP_PROG': 'bzip2',
     'GPG' : 'gpg',
+    'JAR' : 'jar',
     'MAKE' : 'make',
     'MD5SUM' : 'md5sum',
     'MV' : 'mv',
@@ -23,6 +25,7 @@ QUICKRELEASE_CONSTANTS = {
     'TAR' : 'tar',
     'UNZIP' : 'unzip',
     'WGET' : 'wget',
+    'ZIP' : 'zip',
 
     'BUILD_PLATFORMS_MAP': { 'Windows-i686': 'win32',
                              'Darwin-i686': 'mac',
