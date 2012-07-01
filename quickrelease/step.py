@@ -84,8 +84,13 @@ class Step(object):
     def _GetParentProcess(self): return self._parentProcess
     def _GetConfig(self):
         if self.process is None:
-            return None
-        return self.process.config
+            raise self.SimpleStepError("%s has no associated process to "
+             "obtain a ConfigSpec." % (self))
+        elif self.process.config is None:
+            raise self.SimpleStepError("Process %s has no associated "
+             "ConfigSpec." % (self.process))
+        else:
+            return self.process.config
 
     def _GetLogger(self):
         if self.process is None:
@@ -118,11 +123,11 @@ class Step(object):
 
     config = property(_GetConfig)
     """The config associated with the L{Step}'s parent process, if any. Read-only.
-    @type: L{ConfigSpec<quickrelease.config.ConfigSpec>}"""
+    @type: L{ConfigSpec<quickrelease.config.ConfigSpec>} or C{None}."""
 
     process = property(_GetParentProcess) 
     """The process this step is a part of, if any. Read-only.
-    @type: L{Process<quickrelease.process.Process>}"""
+    @type: L{Process<quickrelease.process.Process>} or C{None}"""
 
     logger = property(_GetLogger)
     """The logger associated with the L{Step}'s parent process, if any. Read-only.
