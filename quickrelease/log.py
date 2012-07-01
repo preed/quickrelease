@@ -37,8 +37,8 @@ def GetAppLogger():
 
 class Logger(object):
     """
-    An object representing a handle to a QuickRelease Logger, which is a 
-    wrapper around Python's own L{logging} module.
+    An object representing a handle to a QuickRelease Logger, which is, in turn,
+    a wrapper around Python's own L{logging} module.
     """
     RECOGNIZED_CONSTRUCTOR_ARGS = ('config', 'logDirectory', 'prefixMessages',
      'timestampMessages')
@@ -76,19 +76,19 @@ class Logger(object):
 
     def __init__(self, *args, **kwargs):
         """
-        Construct a L{Process} object.
+        Construct a L{Logger} object.
 
-        @param config: A configuration specification to associate with this L{Process}
-        @type config: L{ConfigSpec<quickrelease.config.ConfigSpec>}
+        @param config: A configuration string to configure this logger.
+        @type config: C{str}
 
-        @param executeSteps: Run the C{Execute} method of the L{Step<quickrelease.step.Step>}s comprising this L{Process}.
-        @type executeSteps: C{bool}
+        @param logDirectory: The root directory to place log files in, organized by process and step. {Process}.
+        @type executeSteps: C{str}
 
-        @param verifySteps: Run the C{Verify} method of the L{Step<quickrelease.step.Step>}s comprising this L{Process}.
-        @type verifySteps: C{bool}
+        @param prefixMessages: Whether to prefix each message with its message type (error, warning, info, or debug). (Note: QuickRelease uses a slightly different definition for these terms than most syslog-style applications; refer to the documentation for details.
+        @type prefixMessages: C{bool} (Default: false)
 
-        @param ignoreErrors: Print any L{ReleaseFrameworkError<quickrelease.exception.ReleaseFrameworkError>}s that occur during the running of the given L{Process}, but continue execution.
-        @type ignoreErrors: C{bool}
+        @param timestampMessages: Whether to prefix each message with a timestamp.
+        @type timestampMessages: C{bool} (Default: false)
         """
         object.__init__(self)
         
