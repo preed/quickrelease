@@ -21,19 +21,20 @@ class StepError(ReleaseFrameworkError):
     An exception subclassed from L{ReleaseFrameworkError<quickrelease.exception.ReleaseFrameworkError>} which provides a more useful error message about the specific L{Step} the error occured in.
     """
     def __init__(self, stepObj, errStr, *args, **kwargs):
-        ReleaseFrameworkError.__init__(self, errStr)
+        ReleaseFrameworkError.__init__(self, errStr, stepObj)
 
-        assert isinstance(stepObj, Step), 'StepErrors require a Step object'
-        self.erroredStep = stepObj
+        assert isinstance(stepObj, Step), "StepErrors require a Step object"
 
         self._partnerStr = ""
         if isinstance(stepObj, PartnerStep):
-            self._partnerStr = " (partner: %s)" % (
-             stepObj.GetActivePartner())
+            self._partnerStr = " (partner: %s)" % (stepObj.activePartner)
+
+    def _GetErroredStep(self): return self.details
+    erroredStep = property(_GetErroredStep)
 
     def __str__(self):
-        return "Error in step %s%s: %s" % (str(self.erroredStep),
-         self._partnerStr, ReleaseFrameworkError.__str__(self))
+        return "Error in step %s%s: %s" % (self.erroredStep, self._partnerStr,
+         ReleaseFrameworkError.__str__(self))
 
 class _StandardStepRunner(object):
     def __init__(self, *args, **kwargs):
