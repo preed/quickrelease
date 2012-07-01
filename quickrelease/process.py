@@ -120,6 +120,11 @@ class Process(object):
     def _GetConfig(self): return self._config
     def _GetLogger(self): return self._logger
     def _HadErrors(self): return self._everHadErrors
+    def _GetProcessConfig(self): return {
+     'execute': self._executeSteps,
+     'verify': self._verifySteps,
+     'ignore_errors': self._ignoreErrors,
+     'notifications': self._enableNotifications }
 
     def _GetProcessStepNames(self):
         if self._stepNames is None:
@@ -148,6 +153,10 @@ class Process(object):
     config = property(_GetConfig)
     """The L{ConfigSpec<quickrelease.config.ConfigSpec>} associated with this process when it was created. Read-only.
     @type: L{ConfigSpec<quickrelease.config.ConfigSpec>}"""
+
+    processConfig = property(_GetProcessConfig)
+    """A dictionary providing details on various configuration settings specific to the L{Process<quickrelease.config.Process>} itself when it was creatod. Read-only.
+    @type: C{dict}"""
 
     errored = property(_HadErrors)
     """Has this process ever encountered an error. Useful for when warnings are ignored or in L{PartnerStep<quickrelease.step.PartnerStep>}s. Read-only.
