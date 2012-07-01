@@ -502,7 +502,7 @@ class RunShellCommand(object):
     def _GetWorkDir(self): return self._workdir
     def _GetTimeout(self): return self._timeout
 
-    def _GetOutputFromMonitor(outputType, raw=False):
+    def _GetOutputFromMonitor(self, outputType, raw=False):
         if self._outputMonitor is None:
             return None
         return self._outputMonitor.GetOutput(outputType, raw)
