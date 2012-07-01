@@ -28,6 +28,13 @@ _DEFAULT_CONFIG_WITH_LOGDIR = '1:%s,2:%s' % (_CONSOLE_OUTPUT, _DIR_OUTPUT)
 
 _COMMAND_LOGFILE_PREFIX = 'RunShellCommand_'
 
+_gAppLogger = None
+
+def GetAppLogger():
+    if _gAppLogger is None:
+        raise RuntimeError("No logger configured for this application run.")
+    return _gAppLogger
+
 class Logger(object):
     """
     An object representing a handle to a QuickRelease Logger, which is a 
@@ -161,6 +168,8 @@ class Logger(object):
 
         self._currentStepName = None
         self._currentStepHandler = None
+
+        _gAppLogger = self
 
 
     def _GetRawLogHandle(self): return logging.getLogger('quickrelease')
