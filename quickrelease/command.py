@@ -590,6 +590,9 @@ class RunShellCommand(object):
     def __int__(self):
         return self.returncode
 
+    def __bool__(self):
+        return self.returncode == 0
+
     def SetStrOpts(self, separator=DEFAULT__STR__SEPARATOR, decorate=True):
         """
         Sets options for the representation of the command string for its
