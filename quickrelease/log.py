@@ -11,6 +11,7 @@ import re
 import sys
 
 from quickrelease.config import ConfigSpec
+from quickrelease.exception import _QuickReleaseError
 from quickrelease.utils import Makedirs
 
 _LEVEL_MAP = [ 
@@ -27,6 +28,9 @@ _DEFAULT_CONFIG = '1:%s' % (_CONSOLE_OUTPUT)
 _DEFAULT_CONFIG_WITH_LOGDIR = '1:%s,2:%s' % (_CONSOLE_OUTPUT, _DIR_OUTPUT)
 
 _COMMAND_LOGFILE_PREFIX = 'RunShellCommand_'
+_STEP_LOG_FILE = 'log.txt'
+
+_TIME_FORMAT_STR = "%Y-%m-%d %H:%M:%S"
 
 _gAppLogger = None
 
@@ -76,6 +80,8 @@ class Logger(object):
             self._loggingConfig[output] = _LEVEL_MAP[level]
 
     def __init__(self, *args, **kwargs):
+        global _gAppLogger
+
         """
         Construct a L{Logger} object.
 
@@ -95,14 +101,13 @@ class Logger(object):
         
         # default attributes
         self._logDirectory = None
-
-        # prefix each message with data-type (info, debug, error, etc.)
         self._prefixMessages = False
         self._timestampMessages = False
-
-        self._loggingConfig = {}
-
         self._config = None
+
+        # Internal stuff
+        self._loggingConfig = {}
+        self._currentStepLogHandler = None
 
         # levels:
         # 0 - errors: only exceptions
@@ -123,11 +128,11 @@ class Logger(object):
                 setattr(self, '_' + arg, kwargs[arg])
 
         if self._config is None:
-            self._config = _DEFAULT_CONFIG
-
-        if self._logDirectory is not None:
-            self._config = _DEFAULT_CONFIG_WITH_LOGDIR
-
+            if self._logDirectory is not None:
+                self._config = _DEFAULT_CONFIG_WITH_LOGDIR
+            else:
+                self._config = _DEFAULT_CONFIG
+        
         self._ParseConfigString()
 
         for logOutput in self._loggingConfig.keys():
@@ -145,11 +150,11 @@ class Logger(object):
         if self._prefixMessages:
             self._formatStr = '%(levelname)s: %(message)s'
         if self._timestampMessages:
-            self._formatStr = '%(acstime)s: %(message)s'
+            self._formatStr = '%(asctime)s: %(message)s'
         if self._prefixMessages and self._timestampMessages:
-            self._formatStr = '%(acstime)s %(levelname)s: %(message)s'
+            self._formatStr = '%(asctime)s %(levelname)s: %(message)s'
 
-        self._formatter = logging.Formatter(self._formatStr)
+        self._formatter = logging.Formatter(self._formatStr, _TIME_FORMAT_STR)
 
         for logOutput in self._loggingConfig.keys():
             if logOutput == _DIR_OUTPUT:
@@ -161,15 +166,18 @@ class Logger(object):
                 ch = logging.StreamHandler(sys.stdout)
                 #print self._loggingConfig[logOutput]
                 ch.setLevel(self._loggingConfig[logOutput])
+                ch.setFormatter(self._formatter)
                 self.logHandle.addHandler(ch)
             else:
                 fh = logging.FileHandler(logOutput, mode='a')
                 fh.setLevel(self._loggingConfig[logOutput])
+                fh.setFormatter(self._formatter)
                 self.logHandle.addHandler(fh)
 
         self._currentStepName = None
         self._currentStepHandler = None
 
+        self.logHandle.setLevel(min(self._loggingConfig.values()))
         _gAppLogger = self
 
 
@@ -181,41 +189,63 @@ class Logger(object):
     logDirectory = property(_GetLogDir)
     config = property(_GetConfigString)
 
-    def _GetStepLogfileName(self, step):
-        return os.path.join(self._logDirectory, step.process, str(step))
+    def _GetStepLogDir(self, step):
+        return os.path.join(self.logDirectory, str(step.process), str(step))
 
     def _GetNextStepCommandLogfileName(self, step):
-        stepLogDir = self._GetStepLogfileName()
+        stepLogDir = self._GetStepLogDir(step)
 
         runShellCommandLogs = []
-        for entry in os.listdirs(stepLogDir):
+        for entry in os.listdir(stepLogDir):
             if os.path.isfile(entry) and re.match('^%s\d+' %
              (_COMMAND_LOGFILE_PREFIX), entry):
                 runShellCommandLogs.append(entry)
 
-        return os.path.join(self._logDirectory, step.process, str(step),
+        return os.path.join(self.logDirectory,
          '%s%d' % (_COMMAND_LOGFILE_PREFIX, len(runShellCommandLogs) + 1))
 
     def _HandleStepLogHandler(self, givenKwargs):
         if _DIR_OUTPUT not in self._loggingConfig.keys():
             return
 
-        if 'step' not in givenKwargs:
-            raise RuntimeError("Need a step!")
+        # Handles the case where someone grabbed the logger from GetAppLogger(),
+        # and wants to print an error message; in this case (for now), we'll
+        # print the log message to wherever the other log output is going,
+        # which seems reasonable, but may also bury log output.
+        #
+        # Hrm...
 
+        if 'step' not in givenKwargs:
+            return
 
         step = givenKwargs['step']
 
         if step.name == self._currentStepName:
             return
 
-        self.logHandle.removeHandler(self._currentStepLogHandler)
-        self._currentStepName = step.name
+        if self._currentStepLogHandler is not None:
+            self.logHandle.removeHandler(self._currentStepLogHandler)
+            self._currentStepLogHandler.close()
         self._currentStepLogHandler = None
-        fh = logging.FileHandler(self._GetStepLogfileName(step), mode='w')
-        fh.setLevel(_LEVEL_MAP[self._loggingConfig['dir']])
+
+        self._currentStepName = step.name
+
+        stepLogDir = self._GetStepLogDir(step)
+        if not os.path.exists(stepLogDir):
+            Makedirs(stepLogDir)
+
+        stepLogFile = os.path.join(stepLogDir, _STEP_LOG_FILE)
+
+        fh = None
+        try:
+            fh = logging.FileHandler(stepLogFile, mode='w')
+            fh.setLevel(self._loggingConfig[_DIR_OUTPUT])
+            fh.setFormatter(self._formatter)
+        except IOError, ex:
+            raise _QuickReleaseError(ex)
+            
         self.logHandle.addHandler(fh)
-        self._currentStepLogHandler = fg
+        self._currentStepLogHandler = fh
 
     def Log(self, msg, **kwargs):
         self._HandleStepLogHandler(kwargs)
@@ -229,6 +259,6 @@ class Logger(object):
         self._HandleStepLogHandler(kwargs)
         return self.logHandle.info(msg, kwargs)
 
-    def LogInternalDebug(self, msg, **kwargs):
+    def _LogQR(self, msg, **kwargs):
         self._HandleStepLogHandler(kwargs)
         return self.logHandle.debug(msg, kwargs)
