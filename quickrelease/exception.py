@@ -5,21 +5,15 @@ r"""Various exception/error types used by both QuickRelease and available for
 QuickRelease users to use in their own code.
 """
 
-## TODO: separate out QuickRelease-specific errors from ones for users.
+class _QuickReleaseError(Exception):
+    """
+    An error class to indicate an internal QuickRelease error.
 
-class ReleaseFrameworkError(Exception):
+    NOTE: do not use this class when throwing exceptions from 
+    L{Step<quickrelease.step.Step>}s; use L{ReleaseFrameworkError}.
     """
-    A standard error class to indicate a error with the release framework.
-    """
+
     def __init__(self, explanation, details=None):
-        """
-        Construct the ReleaseFrameworkError.
-
-        @param explanation: A summary of the exception.
-        @type explanation: C{str} (or covertable to)
-
-        @param details: Further details regarding the exception.
-        """
         self._explanation = explanation
         self._details = details
         Exception.__init__(self, explanation)
@@ -35,6 +29,21 @@ class ReleaseFrameworkError(Exception):
 
     def __str__(self):
         return str(self.explanation)
+
+class ReleaseFrameworkError(_QuickReleaseError):
+    """
+    A standard error class to indicate a error with the release framework.
+    """
+    def __init__(self, explanation, details=None):
+        """
+        Construct the ReleaseFrameworkError.
+
+        @param explanation: A summary of the exception.
+        @type explanation: C{str} (or covertable to)
+
+        @param details: Further details regarding the exception.
+        """
+        _QuickReleaseError.__init__(self, explanation, details)
 
 ## TODO: provide an __iter__ method for this
 class ReleaseFrameworkErrorCollection(ReleaseFrameworkError):
