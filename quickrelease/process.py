@@ -25,16 +25,20 @@ QUICKRELEASE_PROCESSES_DIR = 'processes'
 QUICKRELEASE_STEPS_DIR = 'steps'
 INIT_PY = '__init__.py'
 
+IMPORT_PATH_DASH_WARNING_STR = ("Warning: paths containing dashes (-) in the "
+"QUICKRELEASE_DEFINITIONS_PATH may cause import statement errors, depending on "
+"their location. If this doesn't affect your setup, set the "
+"QUICKRELEASE_DISABLE_IMPORT_DASH_WARNING environment variable.")
+
 gProcessAndStepDefnPath = []
 
 QUICKRELEASE_DEFINITIONS_PATH = os.getenv('QUICKRELEASE_DEFINITIONS_PATH')
 
 if QUICKRELEASE_DEFINITIONS_PATH is not None:
     for path in QUICKRELEASE_DEFINITIONS_PATH.split(os.path.pathsep):
-        #if re.search('\-', path):
-        #    print >> sys.stderr, ("Warning: paths containing dashes (-) in the "
-        #     "QUICKRELEASE_DEFINITIONS_PATH may cause import statement errors, "
-        #     "depending on their location.")
+        if re.search('\-', path):
+            if os.getenv('QUICKRELEASE_DISABLE_IMPORT_DASH_WARNING') is None:
+                raise ReleaseFrameworkError(IMPORT_PATH_DASH_WARNING_STR)
         absPath = os.path.abspath(path)
         gProcessAndStepDefnPath.append(absPath)
         sys.path.append(os.path.dirname(absPath))
