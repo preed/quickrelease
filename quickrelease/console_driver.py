@@ -185,7 +185,7 @@ def main():
 
     try:
         configSpec = ConfigSpec(options.configSpecFile,
-         overrides=options.variableRedefs)
+         overrides=options.variableRedefs, rootDir=gRootDir)
     except ConfigSpecError, ex:
         print >> sys.stderr, str(ex)
         return -1
