@@ -277,7 +277,7 @@ class ConfigSpec(object):
 
             for o in overrides:
                 try:
-                    if not re.match('^(\w[\w\-_]*:)*[\w\-_]+=[\w\-_\.]+$', o):
+                    if not re.match('^(\w[\w\-_]*:)*[\w\-_]+=[\w\-_\.:\\\/\s]+$', o):
                         raise ValueError()
 
                     (overrideKey, overrideVal) = o.split('=')
