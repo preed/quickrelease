@@ -135,15 +135,21 @@ class Logger(object):
         
         self._ParseConfigString()
 
+        self._logDirectory = os.path.abspath(self._logDirectory)
+
         for logOutput in self._loggingConfig.keys():
             if (logOutput == _DIR_OUTPUT and self._logDirectory is None):
                 raise ValueError("Log level(s) %s set to output to a "
                  "directory, but no log directory was specified; see the "
                  "-L option." % (', '.join(self._loggingConfig[logOutput])))
 
-        if (self._logDirectory is not None and
-         not os.path.exists(self._logDirectory)):
-            Makedirs(self._logDirectory)
+        if self._logDirectory is not None:
+            if os.path.exists(self._logDirectory):
+                if not os.path.isdir(self._logDirectory):
+                    raise ValueError("The specified log directory %s exists, "
+                     "but is not a directory." % (self._logDirectory))
+            else:
+                Makedirs(self._logDirectory)
 
         self._formatStr = '%(message)s'
 
