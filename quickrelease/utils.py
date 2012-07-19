@@ -180,6 +180,56 @@ def Chdir(path):
     os.environ['PWD'] = path
     return rv
 
+
+def WriteMemo(memoFileName, content, appendOk=False):
+    if not appendOk and os.path.exists(memoFileName):
+        raise ValueError("Memo file %s exists" % (memoFileName))
+
+    if appendOk:
+        handleMode = 'ab'
+    else:
+        handleMode = 'wb'
+
+    try:
+        memoHandle = open(memoFileName, handleMode)
+    except IOError, ex:
+        raise ValueError(ex)
+    
+    if type(content) in (list, tuple):
+        for i in content:
+            print >> memoHandle, i
+    else:
+        print >> memoHandle, content
+    memoHandle.close()
+
+def ReadMemo(memoFileName, returnType=str): 
+    if returnType not in (str, list, tuple):
+        raise ValueError("ReadMemo() can only return str, list, tuple")
+
+    try:
+        memoHandle = open(memoFileName, 'rb')
+    except (IOError, OSError), ex:
+        raise ValueError(ex)
+
+    try:
+        content = None
+        if returnType is str:
+            content = memoHandle.read()
+        elif returnType in (list, tuple):
+            content = []
+            for l in memoHandle:
+                content.append(l.rstrip(os.linesep))
+
+            content = returnType(content)
+        else:
+            assert False, "Unhandled return type: %s" % (returnType)
+    finally:
+        memoHandle.close()
+
+    assert type(content) is returnType, ("content (type %s) is not "
+     "requested returnType (%s)" % (type(content), returnType))
+    return content
+
 class ExceptionURLopener(FancyURLopener):
     """
     A thin wrapper around L{FancyURLopener} which raises an L{IOError} if
