@@ -32,6 +32,7 @@ QUICKRELEASE_CONSTANTS = {
 
     'BUILD_PLATFORMS_MAP': { 'Windows-i686': 'win32',
                              'Darwin-i686': 'mac',
+                             'Darwin-x86_64': 'mac',
                              'Linux-i686': 'linux',
                              'Linux-x86_64': 'linux-x64',
                            },

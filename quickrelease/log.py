@@ -134,8 +134,9 @@ class Logger(object):
                 self._config = _DEFAULT_CONFIG
         
         self._ParseConfigString()
-
-        self._logDirectory = os.path.abspath(self._logDirectory)
+        
+        if self._logDirectory is not None:
+            self._logDirectory = os.path.abspath(self._logDirectory)
 
         for logOutput in self._loggingConfig.keys():
             if (logOutput == _DIR_OUTPUT and self._logDirectory is None):
