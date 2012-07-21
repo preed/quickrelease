@@ -43,6 +43,7 @@ from quickrelease.config import ConfigSpec, ConfigSpecError, ConfSpecErrorIsMiss
 from quickrelease.exception import ReleaseFrameworkError
 from quickrelease.log import Logger
 from quickrelease.utils import PrintReleaseFrameworkError
+from quickrelease.version import QUICKRELEASE_VERSION
 
 try:
     from quickrelease.process import GetAvailableProcessesList, GetProcessByName
@@ -50,8 +51,6 @@ except RuntimeWarning, ex:
     print >> sys.stderr, ex
     sys.exit(1)
    
-QUICK_RELEASE_VERSION = '0.15.0pre'
-
 gRootDir = None
 gUserDefinedConstants = None
 
@@ -60,7 +59,7 @@ def main():
 
     o = OptionParser(usage="%s [ -l [-p ProcessName ] | "
                      "-c config.cfg -p ProcessName [options] ]" % (sys.argv[0]),
-                     version="%prog version " + QUICK_RELEASE_VERSION)
+                     version="%prog version " + QUICKRELEASE_VERSION)
     o.add_option('-1', '--onestep', dest='runOneStep', default=False,
                  action='store_true',
                  help="Run only a single step of the specified process; "

@@ -1,0 +1,3 @@
+
+QUICKRELEASE_VERSION = '0.15.0pre'
+
