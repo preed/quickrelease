@@ -234,19 +234,23 @@ class RunShellCommandError(ReleaseFrameworkError):
 
     STDERR_DISPLAY_CONTEXT = 5
 
-    def __init__(self, rscObj):
-        explanation = "RunShellCommand(): "
-        if rscObj.processtimedout:
-            explanation += "command %s timed out" % (rscObj)
-        elif rscObj.processkilled:
-            explanation += "command %s killed; exit value: %d" % (rscObj,
-             rscObj.returncode)
-        else:
-            explanation += ("command %s failed; exit value: %d, partial "
-             "stderr: %s" % (rscObj, rscObj.returncode, ' '.join(rscObj.stderr[
-             -self.STDERR_DISPLAY_CONTEXT:])))
+    def __init__(self, rscObj, explanation=None):
+        explanationStr = "RunShellCommand(): "
 
-        ReleaseFrameworkError.__init__(self, explanation, rscObj)
+        if explanation is not None:
+            explanationStr += explanation
+        else:
+            if rscObj.processtimedout:
+                explanationStr += "command %s timed out" % (rscObj)
+            elif rscObj.processkilled:
+                explanationStr += "command %s killed; exit value: %d" % (rscObj,
+                 rscObj.returncode)
+            else:
+                explanationStr += ("command %s failed; exit value: %d, partial "
+                 "stderr: %s" % (rscObj, rscObj.returncode, 
+                 ' '.join(rscObj.stderr[-self.STDERR_DISPLAY_CONTEXT:])))
+
+        ReleaseFrameworkError.__init__(self, explanationStr, rscObj)
 
     def _GetCommandObj(self): return self.details
 
@@ -471,8 +475,8 @@ class RunShellCommand(object):
             self._workdir = os.getcwd()
 
         if not os.path.isdir(self.workdir):
-            raise ReleaseFrameworkError("RunShellCommand(): Invalid working "
-             "directory: %s" % (self.workdir))
+            raise RunShellCommandError(self, "RunShellCommand(): Invalid "
+             "working directory: %s" % (self.workdir))
 
         if self._printOutput is None:
             self._printOutput = self._verbose
@@ -706,7 +710,8 @@ class RunShellCommand(object):
                 raise ex
         except OSError, ex:
             if ex.errno == errno.ENOENT:
-                raise ReleaseFrameworkError("Invalid command or working dir")
+                raise RunShellCommandError(self, "Invalid command or working "
+                 "dir: %s, working dir: %s" % (self, self.workdir))
             raise ReleaseFrameworkError("OSError: %s" % str(ex), details=ex)
         #except Exception, ex:
         #    print "EX: %s" % (ex)
