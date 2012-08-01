@@ -2,9 +2,6 @@
 from quickrelease.step import Step, PartnerStep
 
 class TestStepOne(Step):
-    def __init__(self, *args, **kwargs):
-        Step.__init__(self, *args, **kwargs)
-
     def Execute(self):
         print "EXECUTE %s." % (self)
         print "    Release version: %s" % (self.config.Get('version'))
@@ -16,9 +13,6 @@ class TestStepOne(Step):
         print
 
 class TestPartnerStepTwo(PartnerStep):
-    def __init__(self, *args, **kwargs):
-        PartnerStep.__init__(self, *args, **kwargs)
-    
     def Preflight(self):
         print "PREFLIGHT %s with partner %s." % (self, self.activePartner)
 
@@ -34,9 +28,6 @@ class TestPartnerStepTwo(PartnerStep):
         print
 
 class TestStepThree(Step):
-    def __init__(self, *args, **kwargs):
-        Step.__init__(self, *args, **kwargs)
-    
     def Execute(self):
         print "EXECUTE %s." % (self)
         print

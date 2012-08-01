@@ -189,9 +189,6 @@ class FirefoxDownloadKeyAndSums(Step):
         print '\n'.join(rv.stderr)
 
 class FirefoxDownloadSource(Step):
-    def __init__(self, *args, **kwargs):
-        Step.__init__(self, *args, **kwargs)
-
     def Preflight(self):
         PlatformCheck(self.config)
 
@@ -213,9 +210,6 @@ class FirefoxDownloadSource(Step):
             raise self.SimpleStepError(str(ex))
 
 class FirefoxExtractSource(Step):
-    def __init__(self, *args, **kwargs):
-        Step.__init__(self, *args, **kwargs)
-
     def Preflight(self):
         conf = self.config
         PlatformCheck(conf)
@@ -250,9 +244,6 @@ class FirefoxExtractSource(Step):
             raise self.SimpleStepError("Missing Firefox source file: %s" % (ex))
 
 class FirefoxConfigureBuild(Step):
-    def __init__(self, *args, **kwargs):
-        Step.__init__(self, *args, **kwargs)
-
     def _GetMozconfigFilename(self):
         conf = self.config
         return os.path.join(GetSourceDirRoot(conf), conf.Get('mozconfig_file'))
@@ -287,9 +278,6 @@ class FirefoxConfigureBuild(Step):
             raise self.SimpleStepError(str(ex))
 
 class FirefoxDoBuild(Step):
-    def __init__(self, *args, **kwargs):
-        Step.__init__(self, *args, **kwargs)
-
     def Preflight(self):
         conf = self.config
         PlatformCheck(conf)
@@ -319,9 +307,6 @@ class FirefoxDoBuild(Step):
 
 
 class FirefoxDoInstallerBuild(Step):
-    def __init__(self, *args, **kwargs):
-        Step.__init__(self, *args, **kwargs)
-
     def Preflight(self):
         conf = self.config
         PlatformCheck(conf)

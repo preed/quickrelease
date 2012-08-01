@@ -8,5 +8,3 @@ class TestProcess(Process):
               TestStepThree,
             ]
 
-    def __init__(self, *args, **kwargs):
-        Process.__init__(self, *args, **kwargs)
