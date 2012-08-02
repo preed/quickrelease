@@ -176,7 +176,7 @@ import copy
 import os
 import re
 
-from quickrelease.config import ConfigSpecError, ConfigSpec
+from quickrelease.config import ConfigSpecError, ConfigSpec, ConfSpecErrorIsMissingError
 from quickrelease.utils import ImportModule, ImportFunction
 
 class Deliverable(object):
