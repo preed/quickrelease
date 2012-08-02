@@ -29,6 +29,7 @@ something such as U{MozProcess<https://github.com/mozautomation/mozmill/tree/b8e
 """
 
 import errno
+import logging
 import os
 import pickle
 import re
@@ -42,6 +43,7 @@ from Queue import Queue, Empty
 from quickrelease.config import ConfigSpec, ConfigSpecError
 from quickrelease.constants import _PIPE_STDOUT, _PIPE_STDERR
 from quickrelease.exception import ReleaseFrameworkError
+from quickrelease.log import GetAppLogger, _ShellCommandLoggerHandle
 
 gUsingKillableProcess = True
 """On Win32, the L{killableprocess<quickrelease.killableprocess>} class uses
@@ -135,7 +137,15 @@ class _OutputQueueReader(Thread):
     
                 for h in self._logHandleDescriptors:
                     if h.handle is not None and h.type == lineDesc.type:
-                        h.handle.write(lineDesc.content)
+                        # This insanity exists because the python logging
+                        # module people never considered a situation where
+                        # you might want to pass the output as is, without
+                        # a newline automatically prepended to everything for
+                        # you
+                        if type(h.handle) is _ShellCommandLoggerHandle:
+                            h.handle.write(REMOVE_LINE_ENDING(lineDesc.content))
+                        else:
+                            h.handle.write(lineDesc.content)
     
                 self._collectedOutput[lineDesc.type].append(lineDesc)
     
@@ -256,6 +266,14 @@ class RunShellCommandError(ReleaseFrameworkError):
     """The full original L{RunShellCommand} object which generated the error.
     @type:  L{RunShellCommand} instance
     """
+
+# I will admit this now: this is a pretty bad hack for a not-so-great design 
+# decision
+def _OpenLog(*args):
+    name = args[0]
+    if type(name) is _ShellCommandLoggerHandle:
+        return name.open()
+    return open(*args)
 
 RUN_SHELL_COMMAND_DEFAULT_ARGS = { 
  'appendLogfile': True,
@@ -644,9 +662,9 @@ class RunShellCommand(object):
 
             if self._logfile:
                 if self._appendLogfile:
-                    logHandle = open(self._logfile, 'a')
+                    logHandle = _OpenLog(self._logfile, 'a')
                 else:
-                    logHandle = open(self._logfile, 'w') 
+                    logHandle = _OpenLog(self._logfile, 'w') 
 
                 logDescs.append(_LogHandleDesc(logHandle, _PIPE_STDOUT))
 
@@ -655,9 +673,9 @@ class RunShellCommand(object):
 
             if not self._combineOutput and self._errorLogfile is not None:
                 if self._appendErrorLogfile:
-                    errorLogHandle = open(self._errorLogfile, 'a')
+                    errorLogHandle = _OpenLog(self._errorLogfile, 'a')
                 else:
-                    errorLogHandle = open(self._errorLogfile, 'w')
+                    errorLogHandle = _OpenLog(self._errorLogfile, 'w')
 
                 logDescs.append(_LogHandleDesc(errorLogHandle, _PIPE_STDERR))
 
@@ -762,6 +780,31 @@ class RunShellCommand(object):
 
         if self._raiseErrors and self.returncode:
             raise RunShellCommandError(self)
+
+class LoggedShellCommand(RunShellCommand):
+    def __init__(self, *args, **kwargs):
+        appLogger = GetAppLogger()
+
+        if appLogger is None:
+            raise ReleaseFrameworkError("LoggedShellCommand(): No logger "
+             "available.")
+
+        if len(args) > 0:
+            if len(kwargs.keys()) > 0:
+                raise ValueError("LoggedShellCommand: Can't mix initialization "
+                 "styles.")
+
+            kwargs['command'] = args
+
+        kwargs['logfile'] = appLogger.commandOutHandle
+        kwargs['errorLogfile'] = appLogger.commandErrHandle
+        kwargs['combineOutput'] = False
+        kwargs['verbose'] = False
+        kwargs['printOutput'] = False
+
+        # delete all vars associated w/ output
+        #verbose/printOutput, etc.
+        RunShellCommand.__init__(self, **kwargs)
 
 def _CheckRunShellCommandArg(argType):
     if argType not in (str, unicode, int, float, list, long):
