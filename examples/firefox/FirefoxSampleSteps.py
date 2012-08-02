@@ -5,7 +5,7 @@ import shutil
 import sys
 import tempfile
 
-from quickrelease.command import RunShellCommand
+from quickrelease.command import LoggedShellCommand
 from quickrelease.deliverable import FindDeliverables, GetDeliverable, GetAllDeliverables
 from quickrelease.exception import ReleaseFrameworkError
 from quickrelease.step import Step
@@ -115,8 +115,7 @@ class FirefoxDownloadKeyAndSums(Step):
                     '--no-check-certificate',
                     f ]
 
-            rv = RunShellCommand(command=cmd,
-                                 verbose=True)
+            rv = LoggedShellCommand(command=cmd)
 
     def Verify(self):
         for f in self.dlFiles:
@@ -146,10 +145,8 @@ class FirefoxDownloadKeyAndSums(Step):
 
         rv = None
         try:
-            rv = RunShellCommand(command=cmd,
-                                 verbose=True,
-                                 printOutput=False,
-                                 raiseErrors=False)
+            rv = LoggedShellCommand(command=cmd,
+                                    raiseErrors=False)
         except ReleaseFrameworkError, ex:
             if str(ex) == "Invalid command or working dir":
                 if validationReqd:
@@ -200,8 +197,7 @@ class FirefoxDownloadSource(Step):
                 '--no-check-certificate',
                 conf.Get('source_download_url') ]
 
-        rv = RunShellCommand(command=cmd,
-                             verbose=True)
+        rv = LoggedShellCommand(command=cmd)
 
     def Verify(self):
         try:
@@ -228,9 +224,8 @@ class FirefoxExtractSource(Step):
                 '-xvjf',
                 sourceTarball ]
 
-        rv = RunShellCommand(command=cmd,
-                             workdir=conf.rootDir,
-                             verbose=True)
+        rv = LoggedShellCommand(command=cmd,
+                                workdir=conf.rootDir)
 
     def Verify(self):
         conf = self.config
@@ -266,10 +261,10 @@ class FirefoxConfigureBuild(Step):
 
         mozConfigHandle.close()
 
-        RunShellCommand(command=[conf.GetConstant('MAKE'),
+        LoggedShellCommand(command=[conf.GetConstant('MAKE'),
                                  '-f', 'client.mk', 'configure'],
-                        workdir=GetSourceDirRoot(conf),
-                        verbose=True )
+                           workdir=GetSourceDirRoot(conf),
+                           verbose=True )
 
     def Verify(self):
         try:
@@ -289,12 +284,9 @@ class FirefoxDoBuild(Step):
     def Execute(self):
         conf = self.config
 
-        rv = RunShellCommand(command=[conf.GetConstant('MAKE')],
-                             workdir=GetObjDir(conf),
-                             verbose=True,
-                             timeout=7200,
-                             logfile=os.path.join(conf.rootDir,
-                              conf.Get('full_build_log')))
+        rv = LoggedShellCommand(command=[conf.GetConstant('MAKE')],
+                                workdir=GetObjDir(conf),
+                                timeout=7200)
 
         print "\n\n***\nFull firefox build took %d seconds.\n***\n\n" % (
          rv.runningtime)
@@ -318,12 +310,9 @@ class FirefoxDoInstallerBuild(Step):
     def Execute(self):
         conf = self.config
 
-        rv = RunShellCommand(command=[conf.GetConstant('MAKE'),
+        rv = LoggedShellCommand(command=[conf.GetConstant('MAKE'),
                                      '-C', 'browser/installer'],
-                             workdir=GetObjDir(conf),
-                             verbose=True,
-                             logfile=os.path.join(conf.rootDir,
-                              conf.Get('installer_build_log')))
+                                workdir=GetObjDir(conf))
 
     def Verify(self):
         conf = self.config
