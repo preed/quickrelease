@@ -87,3 +87,11 @@ CONSTANTS_FROM_ENV_HANDLERS = {
 variable string into the expected Python type. The type should match
 what the named constant in L{QUICKRELEASE_CONSTANTS<quickrelease.constants.QUICKRELEASE_CONSTANTS>} returns.
 """
+
+
+#
+# Application-related constants; probably not a good idea to change these
+#
+
+_PIPE_STDOUT = 1
+_PIPE_STDERR = 2

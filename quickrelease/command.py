@@ -40,6 +40,7 @@ import time
 from Queue import Queue, Empty
 
 from quickrelease.config import ConfigSpec, ConfigSpecError
+from quickrelease.constants import _PIPE_STDOUT, _PIPE_STDERR
 from quickrelease.exception import ReleaseFrameworkError
 
 gUsingKillableProcess = True
@@ -64,9 +65,6 @@ if gUsingKillableProcess:
 else:
     from subprocess import Popen
 
-PIPE_STDOUT = 1
-PIPE_STDERR = 2
-
 # We used to use os.linesep here, but it turns out that doesn't work on
 # MSYS, where the Win32 tools output os.linesep, but the ported Unix tools 
 # only output \n
@@ -89,8 +87,8 @@ class _OutputQueueReader(Thread):
         self._logHandleDescriptors = logHandleDescriptors
         self._collectedOutput = {}
 
-        self._collectedOutput[PIPE_STDOUT] = []
-        self._collectedOutput[PIPE_STDERR] = []
+        self._collectedOutput[_PIPE_STDOUT] = []
+        self._collectedOutput[_PIPE_STDERR] = []
 
         self._bigOutputFileHandle = None
         self._maxInMemLines = ConfigSpec.GetConstant(
@@ -179,7 +177,7 @@ class _OutputQueueReader(Thread):
 
             self._collectedOutput[outputType] = []
 
-    def GetOutput(self, outputType=PIPE_STDOUT, raw=False):
+    def GetOutput(self, outputType=_PIPE_STDOUT, raw=False):
         if not self._collectedOutput.has_key(outputType):
             raise ValueError("No output type %s processed by this output "
              "monitor" % (outputType))
@@ -492,11 +490,11 @@ class RunShellCommand(object):
             self.Run()
 
     def _GetCommand(self): return self._command
-    def _GetStdout(self): return self._GetOutputFromMonitor(PIPE_STDOUT)
-    def _GetRawStdout(self): return self._GetOutputFromMonitor(PIPE_STDOUT,
+    def _GetStdout(self): return self._GetOutputFromMonitor(_PIPE_STDOUT)
+    def _GetRawStdout(self): return self._GetOutputFromMonitor(_PIPE_STDOUT,
      True)
-    def _GetStderr(self): return self._GetOutputFromMonitor(PIPE_STDERR)
-    def _GetRawStderr(self): return self._GetOutputFromMonitor(PIPE_STDERR,
+    def _GetStderr(self): return self._GetOutputFromMonitor(_PIPE_STDERR)
+    def _GetRawStderr(self): return self._GetOutputFromMonitor(_PIPE_STDERR,
      True)
     def _GetStartTime(self): return self._startTime
     def _GetEndTime(self): return self._endTime
@@ -650,10 +648,10 @@ class RunShellCommand(object):
                 else:
                     logHandle = open(self._logfile, 'w') 
 
-                logDescs.append(_LogHandleDesc(logHandle, PIPE_STDOUT))
+                logDescs.append(_LogHandleDesc(logHandle, _PIPE_STDOUT))
 
                 if self._combineOutput:
-                    logDescs.append(_LogHandleDesc(logHandle, PIPE_STDERR))
+                    logDescs.append(_LogHandleDesc(logHandle, _PIPE_STDERR))
 
             if not self._combineOutput and self._errorLogfile is not None:
                 if self._appendErrorLogfile:
@@ -661,7 +659,7 @@ class RunShellCommand(object):
                 else:
                     errorLogHandle = open(self._errorLogfile, 'w')
 
-                logDescs.append(_LogHandleDesc(errorLogHandle, PIPE_STDERR))
+                logDescs.append(_LogHandleDesc(errorLogHandle, _PIPE_STDERR))
 
             outputQueue = Queue()
 
@@ -684,10 +682,10 @@ class RunShellCommand(object):
 
             stdoutReader = Thread(target=_EnqueueOutput,
              name="RunShellCommand() stdout reader",
-             args=(process.stdout, outputQueue, PIPE_STDOUT))
+             args=(process.stdout, outputQueue, _PIPE_STDOUT))
             stderrReader = Thread(target=_EnqueueOutput,
              name="RunShellCommand() stderr reader",
-             args=(process.stderr, outputQueue, PIPE_STDERR))
+             args=(process.stderr, outputQueue, _PIPE_STDERR))
             self._outputMonitor = _OutputQueueReader(queue=outputQueue,
              logHandleDescriptors=logDescs, printOutput=self._printOutput)
 
@@ -741,20 +739,20 @@ class RunShellCommand(object):
                     self._processWasKilled = True
                     self._processTimedOut = True
 
-                #om = outputMonitor.collectedOutput[PIPE_STDOUT]
+                #om = outputMonitor.collectedOutput[_PIPE_STDOUT]
                 #for i in range(om):
                 #    print "STDOUT line %d (%d): %s" % (i, om[i].time,
                 #     om[i].content)
                 #
-                #om = outputMonitor.collectedOutput[PIPE_STDERR]
+                #om = outputMonitor.collectedOutput[_PIPE_STDERR]
                 # for i in range(om):
                 #     print "STDERR line %d (%d): %s" % (i, om[i].time,
                 #      om[i].content)
 
-                #self._stdout = outputMonitor.GetOutput(PIPE_STDOUT)
-                #self._rawstdout = outputMonitor.GetOutput(PIPE_STDOUT,
+                #self._stdout = outputMonitor.GetOutput(_PIPE_STDOUT)
+                #self._rawstdout = outputMonitor.GetOutput(_PIPE_STDOUT,
                 # raw=True)
-                #self._stderr = outputMonitor.GetOutput(PIPE_STDERR)
+                #self._stderr = outputMonitor.GetOutput(_PIPE_STDERR)
                 self._endTime = procEndTime
                 self._returncode = process.returncode
 
