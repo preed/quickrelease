@@ -31,6 +31,7 @@ QUICKRELEASE_CONSTANTS = {
     'ZIP' : 'zip',
 
     'BUILD_PLATFORMS_MAP': { 'Windows-i686': 'win32',
+                             'Windows-AMD64': 'win64',
                              'Darwin-i686': 'mac',
                              'Darwin-x86_64': 'mac',
                              'Linux-i686': 'linux',
