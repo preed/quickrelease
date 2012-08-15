@@ -4,12 +4,12 @@
 import os
 from setuptools import setup
 
-from quickrelease.console_driver import QUICK_RELEASE_VERSION
+from quickrelease.version import QUICKRELEASE_VERSION
 
 setup(
     name = "quickrelease",
 
-    version = QUICK_RELEASE_VERSION,
+    version = QUICKRELEASE_VERSION,
 
     author = "J. Paul Reed",
     author_email = "preed@releng-approaches.com",
