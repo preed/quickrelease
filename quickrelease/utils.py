@@ -180,6 +180,26 @@ def Chdir(path):
     os.environ['PWD'] = path
     return rv
 
+def JoinPaths(*args):
+    """
+    A wrapper around C{os.path.join()} which passes the result to
+    C{os.path.normpath()} to ensure correct path separators.
+
+    os.path.join() will not alter arguments that contain a[n incorrect]
+    platform-specific path separator, to normalize them for the current
+    operating system.
+
+    This case can occur when paths are built up in a L{ConfigSpec<quickrelease.config.ConfigSpec>}
+    with platform-specific path separtors in them.
+
+    @param args: The directory components to join together.
+    @type args: Array of C{str}
+
+    @return: A string representing the joined paths, separated by the correct
+    operating system path separator.
+    @rtype: C{str}
+    """
+    return os.path.normpath(os.path.join(*args))
 
 def WriteMemo(memoFileName, content, appendOk=False):
     if not appendOk and os.path.exists(memoFileName):
