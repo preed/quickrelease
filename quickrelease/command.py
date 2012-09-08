@@ -556,6 +556,11 @@ class RunShellCommand(object):
     line-endings removed. Read-only.
     @type: C{list}"""
 
+    rawstderr = property(_GetRawStderr)
+    """A string blob of the C{STDERR} stream without any modification.
+    Read-only.
+    @type: C{str}"""
+
     runningtime = property(_GetRunningTime)
     """The running time of the command. C{None} if it hasn't been started yet.
     Read-only.
