@@ -177,7 +177,7 @@ import os
 import re
 
 from quickrelease.config import ConfigSpecError, ConfigSpec, ConfSpecErrorIsMissingError
-from quickrelease.utils import ImportModule, ImportFunction
+from quickrelease.utils import ImportModule, ImportFunction, JoinPaths
 
 class Deliverable(object):
     """
@@ -468,7 +468,7 @@ def FindDeliverables(deliverableDir, config):
 
     for root, dirs, files in os.walk(deliverableDir):
         for f in files:
-            #print "Looking at: %s" % (os.path.join(root, f))
+            #print "Looking at: %s" % (JoinPaths(root, f))
             deliverableDescList = []
             for section in deliverableSections:
                 delivRegex = None
@@ -511,7 +511,7 @@ def FindDeliverables(deliverableDir, config):
                      'type': matchType,
                      'subclass' : subclassType,
                      'class' : DeliverableClassFromSectionName(section),
-                     'file' : os.path.join(root, f),
+                     'file' : JoinPaths(root, f),
                     }
 
 

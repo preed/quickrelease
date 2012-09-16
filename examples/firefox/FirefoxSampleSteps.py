@@ -9,7 +9,7 @@ from quickrelease.command import LoggedShellCommand
 from quickrelease.deliverable import FindDeliverables, GetDeliverable, GetAllDeliverables
 from quickrelease.exception import ReleaseFrameworkError
 from quickrelease.step import Step
-from quickrelease.utils import GetBuildPlatform, GetSHA1FileHash
+from quickrelease.utils import GetBuildPlatform, GetSHA1FileHash, JoinPaths
 
 def PlatformCheck(conf):
    thisPlatform = GetBuildPlatform()
@@ -21,14 +21,14 @@ def PlatformCheck(conf):
         supportedPlatforms), thisPlatform))
 
 def GetSourceDirRoot(conf):
-    return os.path.join(conf.rootDir, conf.Get('source_root_dir'))
+    return JoinPaths(conf.rootDir, conf.Get('source_root_dir'))
 
 def GetObjDir(conf):
-    return os.path.join(GetSourceDirRoot(conf), conf.Get('objdir'))
+    return JoinPaths(GetSourceDirRoot(conf), conf.Get('objdir'))
 
 def VerifyFirefoxDownload(conf):
     sourceFile = conf.Get('source_download_file')
-    sourceFileFullPath = os.path.join(conf.rootDir, sourceFile)
+    sourceFileFullPath = JoinPaths(conf.rootDir, sourceFile)
 
     if not os.path.isfile(sourceFileFullPath):
         raise ValueError("Couldn't find downloaded firefox source code: %s" %
@@ -62,7 +62,7 @@ def VerifyFileList(fileList, commonPrefix=None):
     for f in fileList:
         testFile = f
         if commonPrefix is not None:
-            testFile = os.path.join(commonPrefix, f)
+            testFile = JoinPaths(commonPrefix, f)
 
         if not os.path.isfile(testFile):
             raise ValueError(testFile)
@@ -76,7 +76,7 @@ def VerifyFirefoxBuildConfigured(conf):
     except ValueError, ex:
         raise ValueError("Autoconf test file not present: %s" % (ex))
 
-    confStatusFile = os.path.join(objDir, conf.Get('autoconf_status_file'))
+    confStatusFile = JoinPaths(objDir, conf.Get('autoconf_status_file'))
 
     lastLine = None
     confStatusFileHandle = open(confStatusFile, 'r')
@@ -90,7 +90,7 @@ def VerifyFirefoxBuildConfigured(conf):
 
 def VerifySuccessfulFirefoxBuild(conf):
     firefoxBuildTestFiles = conf.Get('build_test_files', list)
-    distDir = os.path.join(GetObjDir(conf), 'dist')
+    distDir = JoinPaths(GetObjDir(conf), 'dist')
 
     try:
         VerifyFileList(firefoxBuildTestFiles, distDir)
@@ -128,9 +128,9 @@ class FirefoxDownloadKeyAndSums(Step):
                 raise self.SimpleStepError("Key/checksum file %s missing." %
                  (fileName))
 
-        keyFile = os.path.join(os.getcwd(),
+        keyFile = JoinPaths(os.getcwd(),
          os.path.basename(self.config.Get('sha1_checksum_sig_download_url')))
-        sha1SumsFile = os.path.join(os.getcwd(),
+        sha1SumsFile = JoinPaths(os.getcwd(),
          os.path.basename(self.config.Get('sha1_checksum_download_url')))
 
         validationReqd = self.config.Get('require_pgp_validation', bool)
@@ -217,7 +217,7 @@ class FirefoxExtractSource(Step):
     def Execute(self):
         conf = self.config
 
-        sourceTarball = os.path.join(conf.rootDir,
+        sourceTarball = JoinPaths(conf.rootDir,
          os.path.basename(conf.Get('source_download_url')))
 
         cmd = [ conf.GetConstant('TAR'),
@@ -241,7 +241,7 @@ class FirefoxExtractSource(Step):
 class FirefoxConfigureBuild(Step):
     def _GetMozconfigFilename(self):
         conf = self.config
-        return os.path.join(GetSourceDirRoot(conf), conf.Get('mozconfig_file'))
+        return JoinPaths(GetSourceDirRoot(conf), conf.Get('mozconfig_file'))
 
     def Preflight(self):
         PlatformCheck(self.config)
@@ -316,7 +316,7 @@ class FirefoxDoInstallerBuild(Step):
 
     def Verify(self):
         conf = self.config
-        distDir = os.path.join(GetObjDir(conf), 'dist')
+        distDir = JoinPaths(GetObjDir(conf), 'dist')
 
         delivsFound = FindDeliverables(distDir, conf)
 
@@ -342,7 +342,7 @@ class FirefoxDoInstallerBuild(Step):
         # of the utility functions...
 
         ourInstallerHash = GetSHA1FileHash(installerObj.fileName)
-        tmpInstallerHash = GetSHA1FileHash(os.path.join(tmpDir,
+        tmpInstallerHash = GetSHA1FileHash(JoinPaths(tmpDir,
          installerObj.file))
 
         if ourInstallerHash != tmpInstallerHash:

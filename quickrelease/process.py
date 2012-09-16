@@ -19,7 +19,7 @@ import sys
 from quickrelease.config import ConfigSpec
 from quickrelease.step import Step
 from quickrelease.exception import ReleaseFrameworkError
-from quickrelease.utils import ImportModule, PrintReleaseFrameworkError
+from quickrelease.utils import ImportModule, PrintReleaseFrameworkError, JoinPaths
 
 QUICKRELEASE_PROCESSES_DIR = 'processes'
 QUICKRELEASE_STEPS_DIR = 'steps'
@@ -51,15 +51,15 @@ INIT_PY_MISSING_ERR_STR = ("The specified directory '%s' in "
  "one.")
 
 for path in gProcessAndStepDefnPath:
-    if not os.path.isfile(os.path.join(path, INIT_PY)):
+    if not os.path.isfile(JoinPaths(path, INIT_PY)):
         raise RuntimeWarning(INIT_PY_MISSING_ERR_STR % (path))
     for d in (QUICKRELEASE_PROCESSES_DIR, QUICKRELEASE_STEPS_DIR):
-        checkDir = os.path.join(path, d)
+        checkDir = JoinPaths(path, d)
         if not os.path.isdir(checkDir):
             raise RuntimeWarning("The specified directory '%s' in "
              "QUICKRELEASE_DEFINITIONS_PATH is missing the '%s' directory; "
              "bailing." % (path, d))
-        elif not os.path.isfile(os.path.join(checkDir, INIT_PY)):
+        elif not os.path.isfile(JoinPaths(checkDir, INIT_PY)):
             raise RuntimeWarning(INIT_PY_MISSING_ERR_STR % (checkDir))
 
 class Process(object):
@@ -266,7 +266,7 @@ def GetAvailableProcesses():
             processModuleFiles = []
 
             try:
-                os.chdir(os.path.join(path, QUICKRELEASE_PROCESSES_DIR))
+                os.chdir(JoinPaths(path, QUICKRELEASE_PROCESSES_DIR))
                 processModuleFiles = glob('*.py')
             finally:
                 os.chdir(cwd)

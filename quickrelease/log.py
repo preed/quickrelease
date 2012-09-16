@@ -13,7 +13,7 @@ import sys
 from quickrelease.constants import _PIPE_STDOUT, _PIPE_STDERR
 from quickrelease.config import ConfigSpec
 from quickrelease.exception import _QuickReleaseError
-from quickrelease.utils import Makedirs
+from quickrelease.utils import Makedirs, JoinPaths
 
 _LEVEL_MAP = [ 
               logging.ERROR,
@@ -247,7 +247,7 @@ class Logger(object):
         if not os.path.exists(stepLogDir):
             Makedirs(stepLogDir)
 
-        stepLogFile = os.path.join(self._currentStepLogDir, _STEP_LOG_FILE)
+        stepLogFile = JoinPaths(self._currentStepLogDir, _STEP_LOG_FILE)
 
         fh = None
         try:
@@ -348,8 +348,8 @@ class Logger(object):
              (_COMMAND_LOGFILE_PREFIX), entry):
                 runShellCommandLogs.append(entry)
 
-        return os.path.join(self.logDirectory,
-         '%s%d' % (_COMMAND_LOGFILE_PREFIX, len(runShellCommandLogs) + 1))
+        return JoinPaths(stepLogDir,
+         '%s%d.txt' % (_COMMAND_LOGFILE_PREFIX, len(runShellCommandLogs) + 1))
 
 class QuickReleaseFilter(logging.Filter):
     def filter(self, record):
