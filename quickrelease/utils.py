@@ -263,9 +263,6 @@ class ExceptionURLopener(FancyURLopener):
     specified URL. FancyURLopener also uses L{IOError}s for communicating errors
     it encounters.
     """
-    def __init__(self, *args, **kwargs):
-        FancyURLopener.__init__(self, *args, **kwargs)
-
     def http_error_default(self, url, fp, errcode, errmsg, headers, data=None):
         if errcode == 403 or errcode == 404:
             raise IOError("HTTP %d error on %s" % (errcode, url))
