@@ -214,13 +214,15 @@ def WriteMemo(memoFileName, content, appendOk=False):
         memoHandle = open(memoFileName, handleMode)
     except IOError, ex:
         raise ValueError(ex)
-    
-    if type(content) in (list, tuple):
-        for i in content:
-            print >> memoHandle, i
-    else:
-        print >> memoHandle, content
-    memoHandle.close()
+
+    try:
+        if type(content) in (list, tuple):
+            for i in content:
+                print >> memoHandle, i
+        else:
+            print >> memoHandle, content
+    finally:
+        memoHandle.close()
 
 def ReadMemo(memoFileName, returnType=str): 
     if returnType not in (str, list, tuple):
