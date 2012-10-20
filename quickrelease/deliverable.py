@@ -67,7 +67,7 @@ the installer should have a unique name)::
  name=MyApplication.exe
  attributes=bits
  filter_attributes=bits
- attrib_arch_callback=mycompany.utils.InstallerBitsFilterCallback
+ attrib_arch_handler=mycompany.utils.InstallerBitsFilterCallback
 
  [deliverable:langpack]
  regex=langpack\-\w+.zip
